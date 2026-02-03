@@ -1,3 +1,9 @@
+"""SuperEvent model definitions.
+
+This module defines two PyTorch `nn.Module` classes that combine a backbone with
+detector and descriptor heads for event-based feature detection/description.
+"""
+
 import numpy as np
 from torch import nn
 
@@ -7,7 +13,21 @@ from models.backbones.maxvit_backbone.yolo_pafpn import YOLOPAFPN
 from models.heads import DetectorHead, DetectorHeadFullRes, DescriptorHead
 
 class SuperEvent(nn.Module):
+    """Backbone + detector/descriptor model at backbone resolution.
+
+    Parameters
+    ----------
+    config : dict
+        Model configuration. Expected keys include:
+        - "backbone": "vgg" or "maxvit"
+        - "input_channels", "feature_channels", "backbone_output_channels"
+        - "grid_size", "descriptor_size"
+        - "backbone_config" (required when backbone is "maxvit")
+    tracing : bool, optional
+        If True, `forward` returns a tuple `(prob, descriptors)` for tracing.
+    """
     def __init__(self, config, tracing=False):
+        """Initialize the SuperEvent model."""
         super().__init__()
         self.backbone_type = config["backbone"]
         self.tracing = tracing
@@ -29,6 +49,20 @@ class SuperEvent(nn.Module):
         self.descriptor = DescriptorHead(input_channels=config["backbone_output_channels"], grid_size=config["grid_size"], descriptor_size=config["descriptor_size"], config=config)
 
     def forward(self, x):
+        """Run a forward pass.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input tensor of shape (N, C, H, W).
+
+        Returns
+        -------
+        tuple or dict
+            If `tracing` is True, returns `(prob, descriptors)`. Otherwise,
+            returns a dict with keys "logits", "prob", "descriptors_raw",
+            and "descriptors".
+        """
         if self.backbone_type == "vgg":
             features = self.backbone(x)[0][-1]
         elif self.backbone_type == "maxvit":
@@ -47,7 +81,21 @@ class SuperEvent(nn.Module):
                     "descriptors": descriptors}
     
 class SuperEventFullRes(nn.Module):
+    """Full-resolution variant that upsamples VGG features when applicable.
+
+    Parameters
+    ----------
+    config : dict
+        Model configuration. Expected keys include:
+        - "backbone": "vgg" or "maxvit"
+        - "input_channels", "feature_channels", "backbone_output_channels"
+        - "descriptor_size"
+        - "backbone_config" (required when backbone is "maxvit")
+    tracing : bool, optional
+        If True, `forward` returns a tuple `(prob, descriptors)` for tracing.
+    """
     def __init__(self, config, tracing=False):
+        """Initialize the SuperEventFullRes model."""
         super().__init__()
         self.config = config
         self.tracing = tracing
@@ -70,6 +118,20 @@ class SuperEventFullRes(nn.Module):
         self.descriptor = DescriptorHead(input_channels=config["backbone_output_channels"], grid_size=1, descriptor_size=config["descriptor_size"], interpolate=False, config=config)
 
     def forward(self, x):
+        """Run a forward pass.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input tensor of shape (N, C, H, W).
+
+        Returns
+        -------
+        tuple or dict
+            If `tracing` is True, returns `(prob, descriptors)`. Otherwise,
+            returns a dict with keys "logits", "prob", "descriptors_raw",
+            and "descriptors".
+        """
         if self.backbone_type == "vgg":
             features_compressed, maxpool_indeces = self.backbone_down(x)
             features = self.backbone_up(features_compressed, maxpool_indeces)
