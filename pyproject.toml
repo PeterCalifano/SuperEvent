@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "superevent"
+version = "0.1.0"
+description = "SuperEvent: event-based keypoint detection and descriptor learning for SLAM."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+  { name = "ETHZ MRL" },
+  { name = "Pietro Califano", email = "petercalifano.gs@gmail.com" }
+]
+dependencies = [
+  "numpy>=1.23",
+  "opencv-python>=4.8",
+  "pandas>=2.0",
+  "PyYAML>=6.0",
+  "scipy>=1.10",
+  "torch>=2.1",
+  "torchvision>=0.16",
+  "tqdm>=4.65",
+  "h5py>=3.8",
+  "hdf5plugin>=4.1",
+]
+
+[project.optional-dependencies]
+train = [
+  "tensorboard>=2.10",
+]
+ros = [
+  "cv-bridge>=1.13.0.post0",
+]
+dev = [
+  "build>=1.2",
+  "pytest>=8.0",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["data*", "data_preparation*", "models*", "ts_generation*", "util*"]
+exclude = ["docs*", "example_data*", "saved_models*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+"data_preparation.SuperGluePretrainedNetwork.models" = ["weights/*.pth"]
