@@ -25,6 +25,8 @@
 This is the official repository of [**SuperEvent: Cross-Modal Learning of Event-based Keypoint Detection for SLAM**](https://arxiv.org/abs/2504.00139).  
 For more details, please check our [**project page**](https://ethz-mrl.github.io/SuperEvent/).
 
+Technical repository guide: `docs/REPOSITORY_OVERVIEW.md`.
+
 ## Installation
 
 Clone this repository
@@ -41,14 +43,15 @@ conda create --name se python=3.12
 conda activate se
 ```
 
-Install requirements with pip
+Install SuperEvent in editable mode
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
-Add SuperEvent root directory to Pythonpath (required in every new terminal)
+Optional extras:
 ```bash
-export PYTHONPATH=$PYTHONPATH:$PWD
+pip install -e ".[train]"   # training extras
+pip install -e ".[dev]"     # build + test extras
 ```
 
 ## Demo
