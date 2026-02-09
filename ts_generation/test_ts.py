@@ -1,3 +1,5 @@
+"""Basic functional and timing checks for `TsGenerator`."""
+
 from time import time
 import torch
 
@@ -5,6 +7,7 @@ from util.eval_utils import fix_seed
 from generate_ts import TsGenerator
 
 def test_ts():
+    """Run unit-like correctness checks for time-surface generation."""
     # Test incorrect input
     ts_gen = TsGenerator(settings={"shape": [184], "delta_t": -0.01})
     assert len(ts_gen.settings["shape"]) == 2
@@ -54,6 +57,7 @@ def test_ts():
     assert torch.allclose(ts_multi[:,:,6], ts[:,:,1])  # pos events dt=0.01
 
 def measure_timing():
+    """Print approximate per-event and per-surface runtime measurements."""
     num_events = 1000000
     ts_gen = TsGenerator()
     fix_seed()

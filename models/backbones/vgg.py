@@ -1,8 +1,13 @@
+"""VGG-style encoder and decoder blocks used by SuperEvent."""
+
 import torch
 from torch import nn
 
 class VggBlock(nn.Module):
+    """Conv-BN-(ReLU) block used in the VGG backbone."""
+
     def __init__(self, input_channels, output_channels, kernel_size, activate=True):
+        """Initialize a VGG convolution block."""
         super().__init__()
         self.activate = activate
         self.layers = nn.Sequential(
@@ -12,13 +17,17 @@ class VggBlock(nn.Module):
         self.activation = nn.ReLU()
 
     def forward(self, x):
+        """Apply convolution, normalization, and optional activation."""
         x = self.layers(x)
         if self.activate:
             x = self.activation(x)
         return x
 
 class VggTransposeBlock(nn.Module):
+    """Transpose-convolution variant of `VggBlock` for upsampling stages."""
+
     def __init__(self, input_channels, output_channels, kernel_size, activate=True):
+        """Initialize a VGG transpose-convolution block."""
         super().__init__()
         self.activate = activate
         self.layers = nn.Sequential(
@@ -28,13 +37,17 @@ class VggTransposeBlock(nn.Module):
         self.activation = nn.ReLU()
 
     def forward(self, x):
+        """Apply transpose-convolution, normalization, and optional activation."""
         x = self.layers(x)
         if self.activate:
             x = self.activation(x)
         return x
 
 class VggBackbone(nn.Module):
+    """VGG-like feature extractor with optional max-pool index outputs."""
+
     def __init__(self, input_channels, output_channels, return_maxpool_indeces=False):
+        """Initialize stacked convolution and pooling layers."""
         super().__init__()
         self.return_maxpool_indeces = return_maxpool_indeces
         self.layers = nn.ModuleList([
@@ -55,6 +68,7 @@ class VggBackbone(nn.Module):
         ])
 
     def forward(self, x):
+        """Run the encoder and return intermediate outputs (+ pooling indices)."""
         outputs = [x]
         maxpool_indeces = []
         for layer in self.layers:
@@ -67,7 +81,10 @@ class VggBackbone(nn.Module):
         return outputs, maxpool_indeces
     
 class VggBackbone_Upsample(nn.Module):
+    """Decoder that mirrors `VggBackbone` with unpooling and skip connections."""
+
     def __init__(self, input_channels, output_channels):
+        """Initialize unpooling + transpose-convolution decoder layers."""
         super().__init__()
         self.layers = nn.ModuleList([
             nn.MaxUnpool2d(kernel_size = 2, stride = 2),
@@ -84,6 +101,7 @@ class VggBackbone_Upsample(nn.Module):
         ])
 
     def forward(self, outputs, maxpool_indeces):
+        """Reconstruct higher-resolution feature maps from encoder outputs."""
         maxpool_indeces_reversed_it = reversed(maxpool_indeces)
         down_outputs_reversed_it = reversed(outputs)
         skip_connection_in_next_layer = False

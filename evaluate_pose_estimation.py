@@ -1,3 +1,5 @@
+"""Evaluate SuperEvent (or baseline tracks) on pose-estimation consistency tasks."""
+
 import argparse
 import cv2
 from glob import glob
@@ -22,6 +24,14 @@ from util import visualization
 from util.eval_utils import fix_seed
 
 def predict_keypoints(args, config, ts_shape, model, events, poses, start_time, end_time, cropped_shape=None, compiled=False):
+    """Run event-stream inference and return keypoints/descriptors over time.
+
+    Returns
+    -------
+    tuple
+        `(pred_list, ts_vis_list, model_inference_time, model_inference_iterations,
+        nms_time, nms_iterations)`.
+    """
     if cropped_shape == None:
         cropped_shape = ts_shape
     settings = {"shape": ts_shape, "delta_t": args.model_delta_t}
@@ -58,9 +68,11 @@ def predict_keypoints(args, config, ts_shape, model, events, poses, start_time, 
 
             # Feed events in batches
             if args.dataset_name == "ecd":
+                # TODO: Replace repeated argmax calls with one pointer walk/searchsorted for speed.
                 current_event_idx = torch.argmax(torch.clamp(events[:, 0], max=pose[0]))
                 event_batch = events[prev_event_idx:current_event_idx]
             elif args.dataset_name == "eds": 
+                # TODO: Replace repeated argmax calls with one pointer walk/searchsorted for speed.
                 current_event_idx = np.argmax(events_t > pose[0] * 1e6)
                 event_batch = torch.from_numpy(np.vstack([(events_t[prev_event_idx:current_event_idx] - events_t[0]) * 1e-6,
                                                            events['x'][prev_event_idx:current_event_idx],
@@ -97,6 +109,7 @@ def predict_keypoints(args, config, ts_shape, model, events, poses, start_time, 
                 ts = ts.to(torch.float16)
             start_t_measurement = time.time()
             pred = model(ts)
+            # TODO: Guard synchronize calls by CUDA availability to avoid unnecessary CPU overhead.
             torch.cuda.synchronize()
             model_inference_time += (time.time() - start_t_measurement)
             model_inference_iterations += 1
@@ -107,6 +120,7 @@ def predict_keypoints(args, config, ts_shape, model, events, poses, start_time, 
             top_k = np.max(ts.shape) // 2
             start_t_measurement = time.time()
             kpts, _ = fast_nms(pred["prob"], config, top_k=top_k)
+            # TODO: Guard synchronize calls by CUDA availability to avoid unnecessary CPU overhead.
             torch.cuda.synchronize()
             nms_time += (time.time() - start_t_measurement)
             nms_iterations += 1
@@ -130,6 +144,7 @@ def predict_keypoints(args, config, ts_shape, model, events, poses, start_time, 
     return pred_list, ts_vis_list, model_inference_time, model_inference_iterations, nms_time, nms_iterations
 
 def process_tracked_keypoints(kpts, num_keypoints_per_step, poses, start_time, end_time, max_eval_delta_t):
+    """Convert external tracked keypoint logs into evaluation prediction format."""
     pred_list = []
     for pose in tqdm(poses):
         # Skip if not in experiment time range
@@ -155,6 +170,7 @@ def process_tracked_keypoints(kpts, num_keypoints_per_step, poses, start_time, e
     return pred_list
 
 def calculate_pose_estimation_error(pred_list, deg_intervals, max_delta_t, ransac_threshold=3.0):
+    """Estimate relative pose error statistics from matched keypoint predictions."""
     bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
     results = {"r_error": [], "inlier_ratio": [], "gt_rot": [], "dt": []}
     skip_until_step = 0
@@ -253,6 +269,7 @@ def calculate_pose_estimation_error(pred_list, deg_intervals, max_delta_t, ransa
     return results
 
 def calculate_auc(results, auc_threshold_list):
+    """Compute AUC values over sorted rotation error curves."""
     # Create precision-recall curve
     sorted_idxs = np.argsort(results["r_error"])
     results["r_error"] = [0] + np.array(results["r_error"])[sorted_idxs].tolist()

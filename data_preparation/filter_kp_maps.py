@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""Filter keypoint map files and write indices of valid samples per sequence."""
+
 import argparse
 from glob import glob
 import numpy as np

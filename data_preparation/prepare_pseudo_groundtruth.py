@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Generate pseudo ground-truth matches with SuperPoint + SuperGlue."""
 
 import argparse
 import cv2
@@ -12,9 +13,10 @@ from tqdm import tqdm
 import torch
 
 from data_preparation.SuperGluePretrainedNetwork.models.matching import Matching
-from util import helpers
+from data_preparation.util import helpers
 
 def matches2keypoint_maps(matches, img_shape):
+    """Convert matched keypoint coordinates into two id-encoded keypoint maps."""
     matches = np.array(matches, dtype=int)
 
     # Create map of zeros with the feature id in its pixel location
@@ -58,6 +60,7 @@ if __name__ == "__main__":
     print(f"Using {device} device")
 
     image_paths = sorted(glob(os.path.join(image_path, "*.png")))
+    # TODO: Stream image pairs from disk for very long sequences to reduce peak RAM.
     image_list = [cv2.imread(path, cv2.IMREAD_GRAYSCALE).astype('float32') for path in image_paths]
     image_shape = image_list[0].shape[:2]
     print("Image shape:", image_shape)

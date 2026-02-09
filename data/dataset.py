@@ -1,3 +1,5 @@
+"""PyTorch datasets for loading SuperEvent training, validation, and test data."""
+
 import cv2
 from enum import Enum
 from glob import glob
@@ -14,10 +16,26 @@ from data_preparation.util.data_io import load_ts_sparse
 DataSplit = Enum("DataSplit", ["train", "val", "test"])
 
 class DatasetCollection(Dataset):
+    """Collection wrapper over multiple dataset-specific `TsDataset` instances."""
     # Remark: This Class handles shuffeling for itself to prevent dimensionality problems
     # when batching (shuffle must be set to False in DataLoader when batch_size > 1)
 
     def __init__(self, data_split, config, skip_to_idx=0, vis_mode=False, demo=False):
+        """Initialize a split-aware dataset collection.
+
+        Parameters
+        ----------
+        data_split : DataSplit
+            Split selector (`train`, `val`, or `test`).
+        config : dict
+            Loaded experiment configuration.
+        skip_to_idx : int, optional
+            Skip samples below this global index (used for resume logic).
+        vis_mode : bool, optional
+            Whether to load grayscale frames in addition to time-surfaces.
+        demo : bool, optional
+            Whether to use demo match files instead of regular pseudo labels.
+        """
         self.skip_to_idx = skip_to_idx
 
         # Get dataset names
@@ -58,9 +76,11 @@ class DatasetCollection(Dataset):
             print(f"Dataset {dataset_name} contains {self.dataset_lengths[i]} samples ({100 * self.dataset_lengths[i] / self.num_elements} %).")
 
     def __len__(self):
+        """Return the total number of samples across all sub-datasets."""
         return self.num_elements
     
     def __getitem__(self, idx):
+        """Return a sample tuple from the mapped sub-dataset index."""
         # Prevent data I/O overhead if training is resumed
         if idx < self.skip_to_idx:
             return []
@@ -72,7 +92,10 @@ class DatasetCollection(Dataset):
         return self.dataset_list[seq][idx]
 
 class TsDataset(Dataset):
+    """Dataset for reading paired time-surfaces and pseudo keypoint labels."""
+
     def __init__(self, data_split, config, vis_mode=False, demo=False):
+        """Build sequence lists and sampling metadata for one dataset name."""
         self.config = config
         self.vis_mode = vis_mode
 
@@ -118,9 +141,11 @@ class TsDataset(Dataset):
             np.random.shuffle(self.index_mapping)
 
     def __len__(self):
+        """Return the number of pseudo-match samples in this dataset."""
         return self.num_elements
 
     def __getitem__(self, idx):
+        """Load one training/evaluation sample by mapped index."""
         idx = self.index_mapping[idx]
         seq, seq_idx = get_seq_and_idx(idx, self.num_samples_per_seq_list)
 

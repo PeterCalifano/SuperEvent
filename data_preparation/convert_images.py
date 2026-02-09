@@ -11,9 +11,10 @@ import os
 import sys
 from tqdm import tqdm
 
-from util import data_io, helpers
+from data_preparation.util import data_io, helpers
 
 def filter_images(images, time_range, image_timestamps):
+    """Keep only frames whose timestamps lie inside the valid event range."""
     images = [images[i] for i, img_stamp in enumerate(image_timestamps) if time_range[0] <= img_stamp <= time_range[1]]
     image_timestamps_filtered = [img_stamp for img_stamp in image_timestamps if time_range[0] <= img_stamp <= time_range[1]]
     stamps_filtered_out = set(image_timestamps) - set(image_timestamps_filtered)
@@ -22,6 +23,7 @@ def filter_images(images, time_range, image_timestamps):
     return images, image_timestamps_filtered
 
 def convert_images(images, calib_data, out_dir, undistort, fisheye_lens_used=False):
+    """Write (optionally undistorted) frames to `out_dir/frames`."""
     if undistort:
         # Create calib matrix
         camera_matrix, distortion_coeffs = helpers.get_camera_matrix_and_distortion_coeffs(calib_data)

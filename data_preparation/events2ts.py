@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Convert event streams into sparse multi-channel time-surfaces on disk."""
 
 import argparse
 import cv2
@@ -137,6 +138,7 @@ if __name__ == "__main__":
             additional_timestamp = next(additional_timestamps_iter, np.inf)
 
         # Feed event
+        # TODO: Use `batch_update` on event chunks to reduce Python loop overhead.
         ts_gen.update(events_t[i], events_x[i], events_y[i], events_p[i])
 
     if timestamp > 0.:

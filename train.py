@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""Train SuperEvent on preprocessed pseudo-labeled time-surface datasets."""
+
 import argparse
 import numpy as np
 import os

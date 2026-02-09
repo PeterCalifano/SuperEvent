@@ -1,10 +1,15 @@
+"""Online generation of multi-channel event time-surfaces."""
+
 import cv2
 import numpy as np
 
 import torch
 
 class TsGenerator:
+    """Maintain event timestamps and produce normalized time-surface tensors."""
+
     def __init__(self, camera_matrix=np.identity(3), distortion_coeffs=np.zeros(5), settings={}, device="cpu"):
+        """Initialize generator settings, optional undistortion, and state tensors."""
         # Process settings
         default_settings = {"shape": [184, 240], "delta_t": [0.01], "undistort": False}
         self.camera_matrix = camera_matrix
@@ -43,10 +48,12 @@ class TsGenerator:
         self.time_stamps = torch.zeros(self.settings["shape"] + [2, 1], dtype=torch.float32).to(self.device)
     
     def update(self, t, x, y, p):
+        """Update a single event `(t, x, y, p)` in internal timestamp memory."""
         # Assuming t is float32, x and y are int, and p is an int with value 0 or 1
         self.time_stamps[x, y, p] = t
 
     def batch_update(self, event_batch):
+        """Update a batch of events while keeping only the latest per `(x, y, p)`."""
         # Only keep events with same x, y, p with lastest t
         sort_values = event_batch[:, 1] * 2 * torch.max(event_batch[:, 2] + 1) + event_batch[:, 2] * 2 + event_batch[:, 3]
         sort_values, sort_indeces = torch.sort(sort_values, dim=0, stable=True)
@@ -54,6 +61,7 @@ class TsGenerator:
 
         # Every x, y, p must be different from the next one, otherwise it is repeated and has not the most recent time stamp
         # The last element alwas has the most recent time stamp for its pixel
+        # TODO: Replace per-call tensor creation with a cached constant to reduce tiny allocations.
         keep_event_mask = sort_values[:-1] != sort_values[1:]
         keep_event_mask = torch.cat([keep_event_mask, torch.tensor([True], device=self.device)])
         event_batch = event_batch[keep_event_mask]
@@ -69,6 +77,7 @@ class TsGenerator:
         #assert not any(self.time_stamps[x, y, p] < t[..., None])
 
     def get_ts(self):
+        """Return the current normalized time-surface tensor."""
         t_max = torch.max(self.time_stamps)
         ts = self.time_stamps - t_max
         

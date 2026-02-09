@@ -24,7 +24,10 @@ FeatureMap = th.Tensor
 BackboneFeatures = Dict[int, th.Tensor]
 
 class MaxViTBackbone(nn.Module):
+    """Wrapper around staged MaxViT feature extraction."""
+
     def __init__(self, mdl_config: dict):
+        """Initialize staged MaxViT backbone from configuration dictionary."""
         super().__init__()
 
         ###### Config ######
@@ -71,12 +74,14 @@ class MaxViTBackbone(nn.Module):
         self.num_stages = num_stages
 
     def get_stage_dims(self, stages: Tuple[int, ...]) -> Tuple[int, ...]:
+        """Return channel dimensions for 1-indexed stage ids."""
         stage_indices = [x - 1 for x in stages]
         assert min(stage_indices) >= 0, stage_indices
         assert max(stage_indices) < len(self.stages), stage_indices
         return tuple(self.stage_dims[stage_idx] for stage_idx in stage_indices)
 
     def get_strides(self, stages: Tuple[int, ...]) -> Tuple[int, ...]:
+        """Return spatial strides for 1-indexed stage ids."""
         stage_indices = [x - 1 for x in stages]
         assert min(stage_indices) >= 0, stage_indices
         assert max(stage_indices) < len(self.stages), stage_indices
@@ -85,6 +90,7 @@ class MaxViTBackbone(nn.Module):
     def forward(self, x: th.Tensor,
             token_mask: Optional[th.Tensor] = None) \
             -> BackboneFeatures:
+        """Run forward pass and return a dictionary of stage feature maps."""
         output: Dict[int, FeatureMap] = {}
         for stage_idx, stage in enumerate(self.stages):
             x = stage(x, token_mask if stage_idx == 0 else None)
@@ -94,10 +100,13 @@ class MaxViTBackbone(nn.Module):
 
 
 class MaxVitAttentionPairCl(nn.Module):
+    """Window attention followed by grid attention on channel-last tensors."""
+
     def __init__(self,
                  dim: int,
                  skip_first_norm: bool,
                  attention_cfg: dict):
+        """Initialize paired partition attention blocks."""
         super().__init__()
 
         self.att_window = PartitionAttentionCl(dim=dim,
@@ -110,6 +119,7 @@ class MaxVitAttentionPairCl(nn.Module):
                                              skip_first_norm=False)
 
     def forward(self, x):
+        """Apply window and grid partition attentions in sequence."""
         x = self.att_window(x)
         x = self.att_grid(x)
         return x
@@ -127,6 +137,7 @@ class MaxViTBackboneStage(nn.Module):
                  enable_token_masking: bool,
                  T_max_chrono_init: Optional[int],
                  stage_cfg: dict):
+        """Initialize one downsampling + repeated-attention stage."""
         super().__init__()
         assert isinstance(num_blocks, int) and num_blocks > 0
         downsample_cfg = stage_cfg["downsample"]
@@ -151,6 +162,7 @@ class MaxViTBackboneStage(nn.Module):
     def forward(self, x: th.Tensor,
                 token_mask: Optional[th.Tensor] = None) \
             -> FeatureMap:
+        """Apply stage downsampling/attention and return channel-first features."""
         x = self.downsample_cf2cl(x)  # N C H W -> N H W C
         if token_mask is not None:
             assert self.mask_token is not None, 'No mask token present in this stage'

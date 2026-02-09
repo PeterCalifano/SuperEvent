@@ -1,9 +1,12 @@
+"""Loss functions for SuperEvent detector and descriptor supervision."""
+
 import random
 
 import torch
 from torchvision.ops import sigmoid_focal_loss
 
 def double_softmax_distance(desc_0, desc_1, temperature=1.0):
+    """Compute one-minus double-softmax matching probability matrix."""
     # Tahen from https://github.com/facebookresearch/silk/blob/main/lib/matching/mnn.py#L36
     similarity = torch.matmul(desc_0, desc_1.T) / temperature
     matching_probability = torch.softmax(similarity, dim=0) * torch.softmax(
@@ -12,6 +15,7 @@ def double_softmax_distance(desc_0, desc_1, temperature=1.0):
     return 1.0 - matching_probability
 
 def detector_loss(logits, ground_truth_keypoint_map, config):
+    """Compute detector loss for either grid-based or pixel-wise predictions."""
     # Make keypoints with label -1 positive so they can be used for training
     ground_truth_keypoint_map = torch.abs(ground_truth_keypoint_map)
 
@@ -35,6 +39,7 @@ def detector_loss(logits, ground_truth_keypoint_map, config):
         return loss(logits, labels)
 
 def descriptor_loss(descriptors0, descriptors1, keypoint_map0, keypoint_map1, config):
+    """Compute contrastive descriptor loss on matched pseudo-label grid cells."""
     # Corresponding keypoints should have an descriptor distance of 0 while all other combinations
     # should have a descriptor distance of 1
     # Grid cells that do not contain a desciptor should be not used for loss calculation
@@ -109,6 +114,7 @@ def descriptor_loss(descriptors0, descriptors1, keypoint_map0, keypoint_map1, co
     return loss, pos_loss, neg_loss
 
 def double_softmax_loss(descriptors0, descriptors1, keypoint_map0, keypoint_map1, config):
+    """Compute descriptor loss using double-softmax matching scores."""
     max_num_keypoints = 500  # probably never reached, just to prevent OOM
     with torch.no_grad():
         batch_size = descriptors0.shape[0]
@@ -167,6 +173,7 @@ def double_softmax_loss(descriptors0, descriptors1, keypoint_map0, keypoint_map1
     return torch.sum(torch.cat(loss_batch)) / normalization
 
 def super_event_loss(logits0, logits1, descriptors0, descriptors1, ground_truth_keypoint_map0, ground_truth_keypoint_map1, config):
+    """Compute total SuperEvent loss and its logging components."""
     det_loss0 = detector_loss(logits0, ground_truth_keypoint_map0, config)
     det_loss1 = detector_loss(logits1, ground_truth_keypoint_map1, config)
     if config["pixel_wise_predictions"]:
