@@ -1,17 +1,46 @@
 """Online generation of multi-channel event time-surfaces."""
 
+from dataclasses import dataclass, field
 import cv2
 import numpy as np
 
 import torch
+
+@dataclass
+class TsGeneratorSettings:
+    """Settings for TsGenerator.
+
+    Parameters
+    ----------
+    shape : list of int, optional
+        Height and width of the generated time-surface tensor. Default is [184, 240].
+    delta_t : list of float, optional
+        Time constant(s) for normalizing the time-surface. Default is [0.01].
+    undistort : bool, optional
+        Whether to undistort the time-surface using the provided camera parameters. Default is False.
+    fisheye_lens : bool, optional
+        Whether to use a fisheye lens camera model for undistortion. Only relevant if `undistort` is True. Default is False.
+    new_camera_matrix : np.ndarray, optional
+        New camera matrix for fisheye lens undistortion. Required if `undistort` is True and `fisheye_lens` is True.
+    crop_to_idxs : list of int, optional
+        Indices for cropping the undistorted image when using a fisheye lens. Required if `undistort` is True and `fisheye_lens` is True. Should be in the format [x_start, x_end, y_start, y_end].
+    """
+    shape: list[int] = field(default_factory=lambda: [184, 240])
+    delta_t: list[float] = field(default_factory=lambda: [0.01])
+    undistort: bool = False
+    fisheye_lens: bool = False
+    new_camera_matrix: np.ndarray | None = None
+    crop_to_idxs: list[int] | None = None
 
 class TsGenerator:
     """Maintain event timestamps and produce normalized time-surface tensors."""
 
     def __init__(self, camera_matrix=np.identity(3), distortion_coeffs=np.zeros(5), settings={}, device="cpu"):
         """Initialize generator settings, optional undistortion, and state tensors."""
+
         # Process settings
         default_settings = {"shape": [184, 240], "delta_t": [0.01], "undistort": False}
+
         self.camera_matrix = camera_matrix
         self.distortion_coeffs = distortion_coeffs
         self.settings = settings
