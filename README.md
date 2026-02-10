@@ -30,6 +30,7 @@ Technical repository guide: `docs/REPOSITORY_OVERVIEW.md`.
 ## Installation
 
 Clone this repository
+
 ```bash
 git@github.com:ethz-mrl/SuperEvent.git
 cd SuperEvent
@@ -38,17 +39,20 @@ git submodule update --init --recursive
 ```
 
 Create conda environment
+
 ```bash
 conda create --name se python=3.12
 conda activate se
 ```
 
 Install SuperEvent in editable mode
+
 ```bash
 pip install -e .
 ```
 
 Optional extras:
+
 ```bash
 pip install -e ".[train]"   # training extras
 pip install -e ".[dev]"     # build + test extras
@@ -57,6 +61,7 @@ pip install -e ".[dev]"     # build + test extras
 ## Demo
 
 To test the system using the pre-generated files in `example_data` (MCTS + pseudo labels), run
+
 ```bash
 python visualize_matches.py
 ```
@@ -69,6 +74,7 @@ python visualize_matches.py
 4. Divide sequences into 'train', 'val' and 'test' sets.
 
 Bash script to execute this pipeline:
+
 ```bash
 ./data_preparation/prepare_training_data.sh -d path/to/dataset
 ```
@@ -79,6 +85,7 @@ Optional arguments:
 `-u` : Adding this flag will create undistorted training data. We do not recommend turning undistortion on, since it can lead to artifacts in the MCTS.  
 
 We combined the following five datasets for training:
+
 - [MVSEC](https://daniilidis-group.github.io/mvsec/)
 - [ViVID++](https://visibilitydataset.github.io/)
 - [DDD20](https://sites.google.com/view/davis-driving-dataset-2020)
@@ -86,20 +93,24 @@ We combined the following five datasets for training:
 - [GRIFFIN](https://grvc.us.es/eye-bird-dataset/)
 
 ## Training
+
 ```bash
 python train.py
 ```
 
 ## Evaluation
+
 ```bash
 python evaluate_pose_estimation.py <path/to/evaluation/dataset>
 ```
 
 We support evaluation on the following datasets:
+
 - [Event-Camera Dataset](https://rpg.ifi.uzh.ch/davis_data.html)
 - [Event-aided Direct Sparse Odometry](https://rpg.ifi.uzh.ch/eds.html)
 
 ## Qualitative examples
+
 ```bash
 python visualize_matches.py
 ```
@@ -107,7 +118,9 @@ python visualize_matches.py
 Shows matched keypoints from SuperEvent inference on test set with SuperPoint + SuperGlue's pseudo labels.
 
 ## Citation
+
 If you find our work useful, please cite:
+
 ```bibtex
 @InProceedings{Burkhardt_2025_ICCV,
     author    = {Burkhardt, Yannick and Schaefer, Simon and Leutenegger, Stefan},

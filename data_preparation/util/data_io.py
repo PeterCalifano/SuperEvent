@@ -17,7 +17,6 @@ from scipy.sparse import csr_matrix
 
 RequiredData = Enum("DataSplit", ["events", "event_time_range", "images", "image_stamps", "calib"])
 
-# ----- High level dataset loading -----
 def load_dataset(dataset, path, required_data):
     """Load selected data fields from a supported dataset sequence path."""
     assert required_data
@@ -110,8 +109,6 @@ def load_dataset_images_calib(dataset, path):
 
     return images, calib
 
-
-# ----- General .txt files -----
 def load_calib_txt(path):
     """Read calibration values from a plain-text calibration file."""
     calib_data = np.genfromtxt(path)
@@ -133,8 +130,6 @@ def load_events_txt(path, only_event_time_range=False):
     print("Raw events loaded")
     return events
 
-
-# ----- Event camera dataset ------
 def load_images_ecd(path):
     """Load grayscale image frames from an ECD-style image directory."""
     print("Loading images from" , path, "...")

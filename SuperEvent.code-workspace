@@ -8,6 +8,12 @@
 		},
 		{
 			"path": "../ETAP"
+		},
+		{
+			"path": "../EventVision_for_SpaceNav"
+		},
+		{
+			"path": "../EventDataGenerationLib"
 		}
 	],
 	"settings": {
