@@ -1,3 +1,5 @@
+"""Detection and descriptor heads used by SuperEvent models."""
+
 import torch
 from torch import nn
 
@@ -7,17 +9,24 @@ from models.backbones.maxvit_backbone.layers.maxvit.maxvit import nhwC_2_nChw, n
 
 # For TensorRT, since 'prob = prob[:, :-1, :, :]' does not work
 class RemoveLastChannel(nn.Module):
+    """Remove a pre-defined final channel via index selection."""
+
     def __init__(self, num_channels: int = 65):
+        """Create an index buffer selecting all channels except the last one."""
         super().__init__()
         # register constant buffer with selected indices [0, ..., 63]
         self.register_buffer("indices", torch.arange(num_channels - 1))
 
     def forward(self, x):
+        """Return `x` without its final channel."""
         # x: (N, C, H, W), indices: (64,)
         return torch.index_select(x, dim=1, index=self.indices)
 
 class DetectorHead(nn.Module):
+    """SuperPoint-style detector head at reduced backbone resolution."""
+
     def __init__(self, config, input_channels=128, grid_size=8):
+        """Initialize detector layers and pixel-shuffle configuration."""
         super().__init__()
         self.grid_size = grid_size
         self.remove_dustbin = RemoveLastChannel(65)
@@ -27,6 +36,7 @@ class DetectorHead(nn.Module):
             )
 
     def forward(self, x):
+        """Predict detector logits and full-resolution keypoint probabilities."""
         x = self.layers(x)
 
         # PyTorch default is channels first [B, C, H, W]
@@ -43,7 +53,10 @@ class DetectorHead(nn.Module):
         return x, prob
 
 class DetectorHeadFullRes(nn.Module):
+    """Pixel-wise detector head that predicts one score per input pixel."""
+
     def __init__(self, config, input_channels=128):
+        """Initialize full-resolution detector layers."""
         super().__init__()
         self.config = config
         self.layers = nn.Sequential(
@@ -52,6 +65,7 @@ class DetectorHeadFullRes(nn.Module):
             )
 
     def forward(self, x):
+        """Predict detector logits and sigmoid probabilities per pixel."""
         x = self.layers(x)
 
         x = torch.squeeze(x, dim=1)
@@ -60,7 +74,10 @@ class DetectorHeadFullRes(nn.Module):
         return x, prob
     
 class DescriptorHead(nn.Module):
+    """Descriptor head with optional interpolation to pixel resolution."""
+
     def __init__(self, config, input_channels=128, grid_size=8, descriptor_size=256, interpolate=True):
+        """Initialize descriptor projection layers."""
         super().__init__()
         self.grid_size = grid_size
         self.descriptor_size = descriptor_size
@@ -71,6 +88,7 @@ class DescriptorHead(nn.Module):
                 )
 
     def forward(self, x):
+        """Return raw descriptor map and normalized descriptor output."""
         x = self.layers(x)
 
         if self.interpolate:
@@ -80,6 +98,8 @@ class DescriptorHead(nn.Module):
             desc = torch.nn.functional.interpolate(x, scale_factor=self.grid_size, mode="bilinear")
             # desc = torch.nn.functional.normalize(desc, dim=1)
             # safe, numerically stable version for TensorRT
+            # TODO: Benchmark `torch.nn.functional.normalize` on current runtimes;
+            # switch back if TensorRT compatibility is no longer required.
             norm = (desc * desc).sum(dim=1, keepdim=True).sqrt()
             desc = desc / (norm + 1e-6)
         else:

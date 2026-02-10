@@ -17,9 +17,6 @@ function get_split_dir(){
     echo $split_dir
 }
 
-# Fix python imports
-export PYTHONPATH=$PYTHONPATH:$pwd
-
 # All data will be loaded from a source dir in the downloaded dataset 
 # and saved in a target dir with the required format for training
 
@@ -79,19 +76,19 @@ do
     mkdir -p ${sequence_target_dir}
 
     # Step 1: Convert images
-    python data_preparation/convert_images.py ${data_dir}/${seq} ${sequence_target_dir} ${dataset_name} --delta_t ${delta_t} --undistort "$undistort"
+    python -m data_preparation.convert_images ${data_dir}/${seq} ${sequence_target_dir} ${dataset_name} --delta_t ${delta_t} --undistort "$undistort"
 
     # Step 2: Generate time surfaces
-    python data_preparation/events2ts.py ${data_dir}/${seq} ${sequence_target_dir}/time_surfaces ${dataset_name} --timestamp_path ${sequence_target_dir}/frame_timestamps.txt --delta_t ${delta_t} --undistort "$undistort"
+    python -m data_preparation.events2ts ${data_dir}/${seq} ${sequence_target_dir}/time_surfaces ${dataset_name} --timestamp_path ${sequence_target_dir}/frame_timestamps.txt --delta_t ${delta_t} --undistort "$undistort"
 
     # Step 3: Detect and match features with SuperGlue
     if [[ -d ${sequence_target_dir}/sg_matches ]] || [[ -d ${target_dir}/train/${dataset_name}/${seq}/sg_matches ]]  || [[ -d ${target_dir}/val/${dataset_name}/${seq}/sg_matches ]]  || [[ -d ${target_dir}/test/${dataset_name}/${seq}/sg_matches ]]; then
         echo "Directory ${target_dir}/</;train/;val/;test/>${dataset_name}/${seq}/sg_matches already exists and will not be overwritten. Please delete it manually to recompute SuperGlue matches."
     else
         split_dir=$(get_split_dir ${target_dir} ${dataset_name}/${seq})
-        python data_preparation/prepare_pseudo_groundtruth.py ${target_dir}/${split_dir}/${dataset_name}/${seq}
+        python -m data_preparation.prepare_pseudo_groundtruth ${target_dir}/${split_dir}/${dataset_name}/${seq}
     fi
 done
 
 # Step 6: Split up sequences into train, val and test
-python data_preparation/split_data.py ${target_dir} ${config_path}
+python -m data_preparation.split_data ${target_dir} ${config_path}

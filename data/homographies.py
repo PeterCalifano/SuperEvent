@@ -1,3 +1,9 @@
+"""Homography sampling, warping, and evaluation helpers.
+
+Most functions are adapted from Glue Factory and used for homography-based
+augmentation and geometric consistency checks.
+"""
+
 # Code taken from https://github.com/cvg/glue-factory/blob/main/gluefactory/geometry/homography.py
 
 import math
@@ -35,6 +41,7 @@ def from_homogeneous(points, eps=0.0):
     return points[..., :-1] / (points[..., -1:] + eps)
 
 def flat2mat(H):
+    """Convert flattened 8-DoF homography parameters into 3x3 matrices."""
     return np.reshape(np.concatenate([H, np.ones_like(H[:, :1])], axis=1), [3, 3])
 
 
@@ -42,6 +49,7 @@ def flat2mat(H):
 
 
 def create_center_patch(shape, patch_shape=None):
+    """Create corner coordinates of a centered rectangular patch."""
     if patch_shape is None:
         patch_shape = shape
     width, height = shape
@@ -74,6 +82,13 @@ def sample_homography_corners(
     min_convexity=0.05,
     rng=np.random,
 ):
+    """Sample a valid homography by perturbing source patch corners.
+
+    Returns
+    -------
+    tuple
+        `(H, src_corners, warped_corners, patch_shape)`.
+    """
     max_angle = max_angle / 180.0 * math.pi
     width, height = shape
     pwidth, pheight = width * (1 - difficulty), height * (1 - difficulty)
@@ -211,6 +226,7 @@ def warp_points_torch(points, H, inverse=True):
 
 
 def seg_equation(segs):
+    """Compute normalized homogeneous line equations from segment endpoints."""
     # calculate list of start, end and midpoints points from both lists
     start_points, end_points = to_homogeneous(segs[..., 0, :]), to_homogeneous(
         segs[..., 1, :]
@@ -226,6 +242,7 @@ def seg_equation(segs):
 
 
 def is_inside_img(pts: torch.Tensor, img_shape: Tuple[int, int]):
+    """Return a boolean mask indicating points that lie inside image bounds."""
     h, w = img_shape
     return (
         (pts >= 0).all(dim=-1)
@@ -339,6 +356,7 @@ def warp_lines_torch(
 
 
 def sym_homography_error(kpts0, kpts1, T_0to1):
+    """Compute symmetric reprojection error for matched point pairs."""
     kpts0_1 = from_homogeneous(to_homogeneous(kpts0) @ T_0to1.transpose(-1, -2))
     dist0_1 = ((kpts0_1 - kpts1) ** 2).sum(-1).sqrt()
 
@@ -351,6 +369,7 @@ def sym_homography_error(kpts0, kpts1, T_0to1):
 
 
 def sym_homography_error_all(kpts0, kpts1, H):
+    """Compute pairwise symmetric reprojection errors between two point sets."""
     kp0_1 = warp_points_torch(kpts0, H, inverse=False)
     kp1_0 = warp_points_torch(kpts1, H, inverse=True)
 
@@ -361,6 +380,7 @@ def sym_homography_error_all(kpts0, kpts1, H):
 
 
 def homography_corner_error(T, T_gt, image_size):
+    """Compute average corner displacement between predicted and GT homographies."""
     W, H = image_size[..., 0], image_size[..., 1]
     corners0 = torch.Tensor([[0, 0], [W, 0], [W, H], [0, H]]).float().to(T)
     corners1_gt = from_homogeneous(to_homogeneous(corners0) @ T_gt.transpose(-1, -2))

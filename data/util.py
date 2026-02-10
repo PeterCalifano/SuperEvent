@@ -1,7 +1,10 @@
+"""Utility functions for dataset indexing and representation conversion."""
+
 import numpy as np
 import cv2
 
 def get_seq_and_idx(idx, sequence_lengths):
+    """Map a global sample index to `(sequence_id, local_index)`."""
     seq = 0
     while idx >= sequence_lengths[seq]:
         idx -= sequence_lengths[seq]
@@ -9,6 +12,11 @@ def get_seq_and_idx(idx, sequence_lengths):
     return seq, idx
 
 def create_kp_maps(matches, shape):
+    """Create paired keypoint-id maps from a SuperGlue-style match dictionary.
+
+    Positive ids represent matched keypoints, `-1` denotes unmatched keypoints,
+    and `0` denotes background.
+    """
     kp_map0 = np.zeros(shape, dtype=np.float32)
     valid = matches["matches0"] > -1
     kp0 = matches["keypoints0"].astype(int)
@@ -22,6 +30,10 @@ def create_kp_maps(matches, shape):
     return kp_map0, kp_map1
 
 def create_tencode_from_ts(ts_neg_100ms, ts_pos_100ms, delta_t):
+    """Convert positive/negative time-surface channels into a single tencode map.
+
+    The expected input channels are normalized time-surfaces with a 100ms window.
+    """
     assert delta_t < 0.1
 
     # Scale to desired resolution

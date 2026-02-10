@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""Visualize predicted SuperEvent matches against pseudo-ground-truth labels."""
+
 import argparse
 import cv2
 from glob import glob

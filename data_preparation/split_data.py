@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Move prepared sequences into train/val/test folders based on config splits."""
 
 import argparse
 from glob import glob
@@ -6,6 +7,7 @@ import os
 import yaml
 
 def move_tree(sourceRoot, destRoot):
+    """Move all files from `sourceRoot` into `destRoot` while preserving structure."""
     os.makedirs(destRoot, exist_ok=True)
     for path, _, files in os.walk(sourceRoot):
         relPath = os.path.relpath(path, sourceRoot)
@@ -20,6 +22,7 @@ def move_tree(sourceRoot, destRoot):
         os.rmdir(path)  # must be empty, otherwise something went wrong moving
 
 def move_sequences(src_parent_path, target_parent_path, config_sequences):
+    """Move configured sequence folders from source root into one split folder."""
     for dataset in config_sequences:
         dataset_name = next(iter(dataset))
 

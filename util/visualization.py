@@ -1,8 +1,11 @@
+"""Visualization helpers for time-surfaces, keypoints, and matches."""
+
 import cv2
 import math
 import numpy as np
 
 def ts2image(ts):
+    """Convert multi-channel time-surface tensor to RGB visualization image."""
     #ts = np.average(ts, axis=2)  # Take average over channels
     #ts = np.uint8(255. * ts)
     #ts = cv2.cvtColor(ts, cv2.COLOR_GRAY2BGR)
@@ -19,6 +22,7 @@ def ts2image(ts):
     return ts_out
 
 def kp_map2matches(kp_maps):
+    """Convert two keypoint-id maps into aligned coordinate match lists."""
     match_list = []
     for kp_map in kp_maps:
         num_matches = round(np.max(kp_map))
@@ -38,12 +42,14 @@ def kp_map2matches(kp_maps):
     return match_list
 
 def visualize_time_surface(ts):
+    """Display a single time-surface visualization in an OpenCV window."""
     ts = ts2image(ts)
 
     cv2.imshow("Time Surface", ts)
     cv2.waitKey(0)
 
 def visualize_matches(kp_maps, img0, img1, title="Matches", waitkey=True, return_image=False, resize_factor=1.0, flip=False):
+    """Draw and optionally return visualized correspondences between two images."""
     matches = kp_map2matches(kp_maps)
     kp0 = [cv2.KeyPoint(float(resize_factor * p[1]), float(resize_factor * p[0]), 1) for p in matches[0]]
     kp1 = [cv2.KeyPoint(float(resize_factor * p[1]), float(resize_factor * p[0]), 1) for p in matches[1]]
@@ -77,6 +83,7 @@ def visualize_matches(kp_maps, img0, img1, title="Matches", waitkey=True, return
         return None, None
 
 def resize_and_make_border(img, resize_factor=1.0, border_size=1):
+    """Resize an image and enforce a constant border with preserved shape."""
     if border_size == 0:
         return
 

@@ -1,7 +1,14 @@
 *.pyc
 *.sbatch
+*.egg-info/
+build/
+dist/
 
 logs/*
 results/*
 runs/*
 slurm/*
+.vscode/browse.vc.db
+.vscode/browse.vc.db-shm
+.vscode/browse.vc.db-wal
+CONTEXT.md

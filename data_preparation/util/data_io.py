@@ -1,3 +1,11 @@
+"""Dataset I/O helpers for supported event-camera datasets.
+
+This module provides:
+- unified loaders for several public datasets,
+- calibration/image/event parsing helpers,
+- sparse serialization utilities for time-surfaces.
+"""
+
 import cv2
 from enum import Enum
 import glob
@@ -11,6 +19,7 @@ RequiredData = Enum("DataSplit", ["events", "event_time_range", "images", "image
 
 # ----- High level dataset loading -----
 def load_dataset(dataset, path, required_data):
+    """Load selected data fields from a supported dataset sequence path."""
     assert required_data
 
     # Event time range will be only computed if not all events are required
@@ -85,6 +94,7 @@ def load_dataset(dataset, path, required_data):
     return events, images, image_stamps, calib
 
 def load_dataset_images_calib(dataset, path):
+    """Load only grayscale frames and calibration for supported datasets."""
     supported_datasets = ["ecd", "fpv"]
     if dataset == supported_datasets[0]:  # ecd
         images = load_images_ecd(os.path.join(path, "images"))
@@ -103,11 +113,13 @@ def load_dataset_images_calib(dataset, path):
 
 # ----- General .txt files -----
 def load_calib_txt(path):
+    """Read calibration values from a plain-text calibration file."""
     calib_data = np.genfromtxt(path)
     print("Calibration loaded")
     return calib_data
 
 def load_events_txt(path, only_event_time_range=False):
+    """Load event data from text file, or only its time range endpoints."""
     print("Loading events from", path)
 
     if only_event_time_range:
@@ -124,12 +136,14 @@ def load_events_txt(path, only_event_time_range=False):
 
 # ----- Event camera dataset ------
 def load_images_ecd(path):
+    """Load grayscale image frames from an ECD-style image directory."""
     print("Loading images from" , path, "...")
     images = [cv2.imread(img_path, cv2.IMREAD_GRAYSCALE) for img_path in sorted(glob.glob(os.path.join(path, '*.png')))]
     print("Loaded", len(images), "images.")
     return images
 
 def load_image_timestamps_ecd(path):
+    """Load image timestamps from ECD `images.txt` format."""
     timestamps = np.genfromtxt(path, usecols=[0])
     print("Loaded image timestamps")
     return timestamps
@@ -137,6 +151,7 @@ def load_image_timestamps_ecd(path):
 
 # ------ RPG FPV drone racing dataset -----
 def load_images_and_stamps_fpv(path):
+    """Load FPV image files and timestamps from `images.txt`."""
     # Load data from images.txt
     print("Loading data from", path)
     data = read_csv(path, header='infer', delimiter=" ")
@@ -151,6 +166,7 @@ def load_images_and_stamps_fpv(path):
 
 # ------ MVSEC h5-file -----
 def load_data_mvsec(path, only_event_time_range=False):
+    """Load MVSEC events, images, and image timestamps from HDF5."""
     assert os.path.isfile(path)
 
     data = h5py.File(path, "r")["davis"]["left"]
@@ -169,6 +185,7 @@ def load_data_mvsec(path, only_event_time_range=False):
 
 # ------ DDD20 exported h5-file -----
 def load_data_ddd20(path, only_event_time_range=False):
+    """Load DDD20 exported HDF5 data with timestamp sanity handling."""
     assert os.path.isfile(path)
 
     data = h5py.File(path, "r")
@@ -202,6 +219,7 @@ def load_data_ddd20(path, only_event_time_range=False):
 
 # ------ HDR exported h5-file -----
 def load_data_hdr(path, only_event_time_range=False):
+    """Load HDR events/images/calibration from MATLAB-exported files."""
     assert os.path.isfile(path)
 
     data = h5py.File(path, "r")
@@ -224,6 +242,7 @@ def load_data_hdr(path, only_event_time_range=False):
 
 # ----- Save time surfaces sparse and compressed ----- #
 def save_ts_sparse(path, np_arr):
+    """Save dense time-surface array as compressed sparse channel matrices."""
     # Convert to sparse matrix
     sparse_arr_list = [csr_matrix(np_arr[:, :, i]) for i in range(np_arr.shape[2])]
 
@@ -238,6 +257,7 @@ def save_ts_sparse(path, np_arr):
 
 # ----- Load time surfaces sparse and compressed ----- #
 def load_ts_sparse(path):
+    """Load compressed sparse time-surface file into a dense array."""
     # Load
     loaded = np.load(path, allow_pickle=True)
 

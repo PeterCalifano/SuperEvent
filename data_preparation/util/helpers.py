@@ -1,8 +1,11 @@
+"""General helper functions used in dataset preparation scripts."""
+
 import cv2
 import numpy as np
 import os
 
 def check_already_exists(path):
+    """Check whether `path` already exists in root or split subdirectories."""
     # Checks for a directory in the root data folder if same directory exists in data split (train, test, val)
     # Returns path where it exists or empty string if it does not exist
 
@@ -25,6 +28,7 @@ def check_already_exists(path):
     return ""
 
 def get_camera_matrix_and_distortion_coeffs(calib_data):
+    """Convert flat calibration values to camera matrix and distortion vector."""
     # Create calib matrix
     camera_matrix = calib_data[:4]
     distortion_coeffs = calib_data[4:]
@@ -39,6 +43,7 @@ def get_camera_matrix_and_distortion_coeffs(calib_data):
     return camera_matrix, distortion_coeffs
 
 def calculate_valid_image_shape(orig_img_shape, camera_matrix, distortion_coeffs, new_camera_matrix):
+    """Estimate valid crop bounds after fisheye undistortion."""
     sample_img = np.ones(orig_img_shape)
     undist_sample_img = cv2.fisheye.undistortImage(sample_img, K=camera_matrix, D=distortion_coeffs[:4], Knew=new_camera_matrix)
 

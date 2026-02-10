@@ -1,3 +1,5 @@
+"""Training helper functions for device transfer and validation loops."""
+
 import numpy as np
 from tqdm import tqdm
 
@@ -6,6 +8,7 @@ import torch
 from models.losses import super_event_loss
 
 def list2device(tensor_list, device):
+    """Recursively move nested tensors/lists to the given device."""
     if type(tensor_list).__name__ == "list":
         tensor_list = [list2device(tensor, device) for tensor in tensor_list]
     else:
@@ -13,10 +16,12 @@ def list2device(tensor_list, device):
     return tensor_list
 
 def detach_nested_list(nested_tensor_list):
+    """Detach all tensors in a nested two-level list."""
     nested_tensor_list = [[tensor.detach() for tensor in tensor_list] for tensor_list in nested_tensor_list]
     return nested_tensor_list
 
 def val_loop(dataloader, model, device, config):
+    """Run one validation pass and return aggregated loss components."""
     # Set the model to evaluation mode - important for batch normalization and dropout layers
     # Unnecessary in this situation but added for best practices
     model.eval()

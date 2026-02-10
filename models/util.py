@@ -1,9 +1,17 @@
+"""Post-processing utilities for keypoint detection maps."""
+
 import math
 
 import torch
 from torchvision.ops import nms
 
 def box_nms(prob, config, remove_zero=None, top_k=None, iou_threshold=0.1):
+    """Apply box-NMS to one detection probability map.
+
+    Notes
+    -----
+    This implementation currently supports batch size 1.
+    """
     ### Batching not supported (only implemented for batch size of 1) ###
     if len(prob.size()) == 3:
         prob = prob[0]
@@ -32,6 +40,7 @@ def box_nms(prob, config, remove_zero=None, top_k=None, iou_threshold=0.1):
     return [pts_candidates[idxs_filtered]], [prob[idxs_filtered]]
 
 def fast_nms(prob, config, top_k=None):
+    """Fast NMS using max-pooling suppression on dense probability maps."""
     # Find all probablilities that are the largest in their box (does not work for ties, but very unlikely to happen with floats)
     nms_mask = prob == torch.nn.functional.max_pool2d(prob, kernel_size=config["nms_box_size"], stride=1, padding=math.floor(config["nms_box_size"]/2))
     prob[~nms_mask] = 0.

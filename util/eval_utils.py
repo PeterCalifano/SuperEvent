@@ -1,3 +1,5 @@
+"""Utility helpers for evaluation and feature extraction."""
+
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
@@ -9,12 +11,14 @@ from models.util import box_nms
 from util.train_utils import list2device
 
 def fix_seed():
+    """Set deterministic seeds for Python, NumPy, and PyTorch."""
     import random
     random.seed(0)
     torch.manual_seed(0)
     np.random.seed(0)
 
 def extract_keypoints_and_descriptors(pts, desc_map, detection_threshold, resize_factor=1.0):
+    """Extract OpenCV keypoints and aligned descriptors from map predictions."""
     if len(pts) > 0 and not len(pts[0]) == 2:
         # Keypoint map provided
         pts = np.where(pts > detection_threshold)
