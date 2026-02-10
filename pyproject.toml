@@ -49,3 +49,9 @@ namespaces = true
 
 [tool.setuptools.package-data]
 "data_preparation.SuperGluePretrainedNetwork.models" = ["weights/*.pth"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra --ignore=ts_generation/test_ts.py --ignore=models/backbones/maxvit_backbone/layers/maxvit/layers/test_time_pool.py"
+pythonpath = ["."]
