@@ -151,11 +151,13 @@ class TsDataset(Dataset):
 
         # Load matches (pseudo ground truth)
         matches = dict(np.load(self.kp_seq_list[seq][seq_idx], allow_pickle=True))
+        image_id0 = str(np.asarray(matches["image_id0"]).item())
+        image_id1 = str(np.asarray(matches["image_id1"]).item())
 
         # Time surface (input)
-        ts0 = load_ts_sparse(os.path.join(self.sequence_paths[seq], "time_surfaces/" + matches["image_id0"] + ".npz")).astype(np.float32)
+        ts0 = load_ts_sparse(os.path.join(self.sequence_paths[seq], f"time_surfaces/{image_id0}.npz")).astype(np.float32)
         if self.config["temporal_matching"]["enable"]:
-            ts1 = load_ts_sparse(os.path.join(self.sequence_paths[seq], "time_surfaces/" + matches["image_id1"] + ".npz")).astype(np.float32)
+            ts1 = load_ts_sparse(os.path.join(self.sequence_paths[seq], f"time_surfaces/{image_id1}.npz")).astype(np.float32)
         else:
             # Only use ts0 and and match with itself after homographic adaption
             ts1 = ts0.copy()
@@ -187,15 +189,15 @@ class TsDataset(Dataset):
             # Load grayscale frames
             assert not self.config["homography_adaptation"]["enable"], "Not supported."
             frame_dir = os.path.join(self.sequence_paths[seq], "frames")
-            frame0_path = os.path.join(frame_dir, str(matches["image_id0"]) + ".png")
-            frame1_path = os.path.join(frame_dir, str(matches["image_id1"]) + ".png")
+            frame0_path = os.path.join(frame_dir, f"{image_id0}.png")
+            frame1_path = os.path.join(frame_dir, f"{image_id1}.png")
             frame0 = cv2.imread(frame0_path)
             frame1 = cv2.imread(frame1_path)
 
             # Add string with additional information
             dataset_name = os.path.basename(os.path.dirname(self.sequence_paths[seq]))
             sequence_name = os.path.basename(self.sequence_paths[seq])
-            identifier = dataset_name + "_" + sequence_name + "_" + str(matches["image_id0"]) + "_" + str(matches["image_id1"])
+            identifier = dataset_name + "_" + sequence_name + "_" + image_id0 + "_" + image_id1
 
         # Filter all keypoints to lie within the image bounds
         ts_shape = ts0.shape[:2][::-1]
