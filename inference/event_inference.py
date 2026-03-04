@@ -82,9 +82,7 @@ class EventInference:
         """Return the cropped shape used for model input."""
         return self._model.cropped_shape
 
-    def Load_events_from_file(
-        self,
-        path: str | Path,
+    def Load_events_from_file(self,path: str | Path,
         format: str | None = None,
     ) -> EventStream:
         """Load events from any supported file format.
@@ -96,8 +94,7 @@ class EventInference:
         """
         return self._model.load_events_from_file(path, format=format)
 
-    def Process_single_window(
-        self,
+    def Process_single_window(self,
         event_batch: torch.Tensor,
         timestamp: float,
     ) -> InferenceResult:
@@ -109,8 +106,7 @@ class EventInference:
         """
         return self._model.infer_from_events(event_batch, timestamp)
 
-    def Process_event_stream(
-        self,
+    def Process_event_stream(self,
         event_stream: EventStream,
         time_window_s: float = 0.033,
     ) -> list[InferenceResult]:

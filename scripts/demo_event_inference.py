@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 
 import cv2
 import numpy as np
@@ -33,8 +34,7 @@ from inference.event_visualization import (
     Render_time_surface,
 )
 
-
-def Main() -> None:
+def main() -> None:
     """Run the event-file inference demo."""
     parser = argparse.ArgumentParser(
         description="SuperEvent inference demo (AEDAT4, AEDAT2, HDF5, TXT)",
@@ -96,8 +96,8 @@ def Main() -> None:
     )
     print(f"Using {device} device")
 
-    settings = EventInferenceSettings(
-        resolution=args.resolution,
+    # Setup inference session
+    settings = EventInferenceSettings(resolution=args.resolution,
         config_path=args.config,
         model_path=args.model,
         device=device,
@@ -107,6 +107,7 @@ def Main() -> None:
     print("Loading pipeline...")
     pipeline = EventInference(settings)
 
+    # Load events from file using EventDataGenerationLib loader
     print(f"Loading events from {args.event_file}...")
     event_stream = pipeline.Load_events_from_file(args.event_file, format=args.format)
     num_events = len(event_stream.t_s)
@@ -117,6 +118,7 @@ def Main() -> None:
     if args.save_dir:
         os.makedirs(args.save_dir, exist_ok=True)
 
+    # Run inference in time windows and visualize
     print(f"Running inference with {args.time_window:.3f} s windows...")
     results = pipeline.Process_event_stream(event_stream, time_window_s=args.time_window)
 
@@ -133,9 +135,13 @@ def Main() -> None:
         mask = (events_matrix[:, 0] >= window_start) & (events_matrix[:, 0] < window_end)
         window_events = events_matrix[mask]
 
-        # Render panels
+        # Render panels for visualization
         event_frame = Render_events_to_frame(window_events, height, width)
+
+        # Contruct time surface visualization
         ts_image = Render_time_surface(result.time_surface)
+
+        # Add keypoints and projected descriptors to the time surface image
         detection_image = Render_keypoints_on_image(
             ts_image.copy(), result.keypoints, result.probabilities,
         )
@@ -165,5 +171,44 @@ def Main() -> None:
     print("Done.")
 
 
+# %% Manual run
 if __name__ == "__main__":
-    Main()
+
+    # Setup options for manual run
+    python_inputs = {
+        "event_file": "path/to/your/events.aedat4",  # placeholder
+        "format": None,  # e.g. "aedat4", "aedat2", "h5", "txt"
+        "model": "saved_models/super_event_weights.pth",
+        "config": "config/super_event.yaml",
+        "time_window": 0.033,
+        "resolution": (180, 240),
+        "save_dir": "",
+        "top_k": None,
+    }
+
+    cli_args = ["demo_event_inference.py", python_inputs["event_file"]]
+
+    if python_inputs["format"] is not None:
+        cli_args.extend(["--format", str(python_inputs["format"])])
+    
+    cli_args.extend(
+        [
+            "--model",
+            str(python_inputs["model"]),
+            "--config",
+            str(python_inputs["config"]),
+            "--time_window",
+            str(python_inputs["time_window"]),
+            "--resolution",
+            str(python_inputs["resolution"][0]),
+            str(python_inputs["resolution"][1]),
+        ],
+    )
+    
+    if python_inputs["save_dir"]:
+        cli_args.extend(["--save_dir", str(python_inputs["save_dir"])])
+    if python_inputs["top_k"] is not None:
+        cli_args.extend(["--top_k", str(python_inputs["top_k"])])
+
+    sys.argv = cli_args
+    main()
