@@ -1,7 +1,7 @@
 """ONNX export module for SuperEvent models.
 
-Exports to ONNX using TorchScript backend with optional validation
-and simplification.
+Exports to ONNX using PyTorch ONNX export (dynamo first, legacy fallback)
+with optional validation and simplification.
 
 Example
 -------
@@ -111,8 +111,8 @@ def Export_model_to_onnx(config_path: str = "config/super_event.yaml",
         onnx_model_name="super_event_0",
         dynamic_axes=dynamic_axes,
         IO_names=io_names,
-        backend="legacy",
-        fallback_to_legacy=False,
+        backend="dynamo",
+        fallback_to_legacy=True,
     )
 
     print(f"ONNX model exported to: {onnx_filepath}")
