@@ -111,9 +111,9 @@ def Compute_crop_mask(
     crop_mask[: math.ceil(crop[0] / 2)] = False
     crop_mask[:, : math.ceil(crop[1] / 2)] = False
     if crop[0] > 1:
-        crop_mask[-math.floor(crop[0] / 2) :] = False
+        crop_mask[-math.floor(crop[0] / 2):] = False
     if crop[1] > 1:
-        crop_mask[:, -math.floor(crop[1] / 2) :] = False
+        crop_mask[:, -math.floor(crop[1] / 2):] = False
 
     cropped_shape = [ts_shape[0] - int(crop[0]), ts_shape[1] - int(crop[1])]
     return crop_mask, cropped_shape
@@ -177,19 +177,18 @@ class SuperEventModel:
     ... )  # doctest: +SKIP
     """
 
-    def __init__(
-        self,
-        config_path: str = "config/super_event.yaml",
-        model_path: str = "saved_models/super_event_weights.pth",
-        device: str = "cpu",
-        resolution: list[int] | None = None,
-        delta_t: list[float] | None = None,
-        detection_threshold: float = 0.01,
-        nms_box_size: int = 5,
-        top_k: int | None = None,
-        camera_matrix: np.ndarray | None = None,
-        dist_coeffs: np.ndarray | None = None,
-    ) -> None:
+    def __init__(self,
+                 config_path: str = "config/super_event.yaml",
+                 model_path: str = "saved_models/super_event_weights.pth",
+                 device: str = "cpu",
+                 resolution: list[int] | None = None,
+                 delta_t: list[float] | None = None,
+                 detection_threshold: float = 0.01,
+                 nms_box_size: int = 5,
+                 top_k: int | None = None,
+                 camera_matrix: np.ndarray | None = None,
+                 dist_coeffs: np.ndarray | None = None,
+                 ) -> None:
         """Load config, model weights, and set up the time-surface generator.
 
         Parameters
@@ -211,7 +210,7 @@ class SuperEventModel:
         top_k : int or None
             Maximum number of keypoints per frame. ``None`` = no limit.
         camera_matrix : np.ndarray or None
-            3×3 intrinsic matrix ``K``. Required for ``Unproject_keypoints``.
+            3x3 intrinsic matrix ``K``. Required for ``Unproject_keypoints``.
             When provided together with ``dist_coeffs``, the time-surface is
             undistorted before inference so that keypoints are in undistorted
             pixel space.
@@ -243,7 +242,8 @@ class SuperEventModel:
         self._crop_mask, self._cropped_shape = Compute_crop_mask(
             self._resolution, self._config,
         )
-        self._crop_offset: list[int] = Compute_crop_offset(self._resolution, self._config)
+        self._crop_offset: list[int] = Compute_crop_offset(
+            self._resolution, self._config)
         self._crop_mask = self._crop_mask.to(device)
 
         # Model
@@ -259,15 +259,16 @@ class SuperEventModel:
         self._model.eval()
 
         # Time-surface generator
-        self._ts_gen = self._Make_ts_generator()
+        self._ts_gen = self._make_ts_generator()
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _Make_ts_generator(self) -> TsGenerator:
+    def _make_ts_generator(self) -> TsGenerator:
         """Construct a TsGenerator with current camera and resolution settings."""
-        K = self._camera_matrix if self._camera_matrix is not None else np.identity(3)
+        K = self._camera_matrix if self._camera_matrix is not None else np.identity(
+            3)
         D = self._dist_coeffs if self._dist_coeffs is not None else np.zeros(5)
         return TsGenerator(
             camera_matrix=K,
@@ -332,11 +333,10 @@ class SuperEventModel:
     # Event I/O
     # ------------------------------------------------------------------
 
-    def Load_events_from_file(
-        self,
-        path: str | Path,
-        format: str | None = None,
-    ) -> EventStream:
+    def load_events_from_file(self,
+                              path: str | Path,
+                              format: str | None = None,
+                              ) -> EventStream:
         """Load events from any supported file format.
 
         Parameters
@@ -362,12 +362,11 @@ class SuperEventModel:
     # Inference
     # ------------------------------------------------------------------
 
-    def _Run_model_and_extract(
-        self,
-        ts_input: torch.Tensor,
-        ts_numpy: np.ndarray,
-        timestamp: float,
-    ) -> InferenceResult:
+    def _run_model_and_extract(self,
+                               ts_input: torch.Tensor,
+                               ts_numpy: np.ndarray,
+                               timestamp: float,
+                               ) -> InferenceResult:
         """Run model forward pass, NMS, and keypoint/descriptor extraction.
 
         Parameters
@@ -402,18 +401,16 @@ class SuperEventModel:
                 (0, self._config["descriptor_size"]), dtype=np.float32,
             )
 
-        return InferenceResult(
-            timestamp=timestamp,
-            keypoints=kpts,
-            probabilities=probs,
-            descriptors=descriptors,
-            time_surface=ts_numpy,
-        )
+        return InferenceResult(timestamp=timestamp,
+                               keypoints=kpts,
+                               probabilities=probs,
+                               descriptors=descriptors,
+                               time_surface=ts_numpy,
+                               )
 
-    def _Prepare_ts_input(
-        self,
-        ts: torch.Tensor,
-    ) -> torch.Tensor:
+    def _prepare_ts_input(self,
+                          ts: torch.Tensor,
+                          ) -> torch.Tensor:
         """Convert channels-last TS to cropped channels-first model input."""
         ts_input = ts.permute(2, 0, 1).unsqueeze(0)
         ts_input = ts_input[..., self._crop_mask].reshape(
@@ -421,11 +418,10 @@ class SuperEventModel:
         )
         return ts_input.to(self._device)
 
-    def Infer_from_events(
-        self,
-        event_batch: torch.Tensor,
-        timestamp: float,
-    ) -> InferenceResult:
+    def infer_from_events(self,
+                          event_batch: torch.Tensor,
+                          timestamp: float,
+                          ) -> InferenceResult:
         """Run inference from a batch of events.
 
         Updates the internal time-surface generator, then runs the model.
@@ -446,15 +442,14 @@ class SuperEventModel:
 
         ts = self._ts_gen.get_ts()
         ts_numpy = ts.cpu().numpy()
-        ts_input = self._Prepare_ts_input(ts)
+        ts_input = self._prepare_ts_input(ts)
 
-        return self._Run_model_and_extract(ts_input, ts_numpy, timestamp)
+        return self._run_model_and_extract(ts_input, ts_numpy, timestamp)
 
-    def Infer_from_time_surface(
-        self,
-        ts_tensor: torch.Tensor | np.ndarray,
-        timestamp: float = 0.0,
-    ) -> InferenceResult:
+    def infer_from_time_surface(self,
+                                ts_tensor: torch.Tensor | np.ndarray,
+                                timestamp: float = 0.0,
+                                ) -> InferenceResult:
         """Run inference from a pre-computed time-surface.
 
         Bypasses the ``TsGenerator`` entirely — useful for dataset evaluation
@@ -475,15 +470,14 @@ class SuperEventModel:
             ts_tensor = torch.from_numpy(ts_tensor).float()
 
         ts_numpy = ts_tensor.cpu().numpy()
-        ts_input = self._Prepare_ts_input(ts_tensor)
+        ts_input = self._prepare_ts_input(ts_tensor)
 
-        return self._Run_model_and_extract(ts_input, ts_numpy, timestamp)
+        return self._run_model_and_extract(ts_input, ts_numpy, timestamp)
 
-    def Infer_from_event_stream(
-        self,
-        event_stream: EventStream,
-        time_window_s: float = 0.033,
-    ) -> list[InferenceResult]:
+    def infer_from_event_stream(self,
+                                event_stream: EventStream,
+                                time_window_s: float = 0.033,
+                                ) -> list[InferenceResult]:
         """Split an event stream into time windows and infer on each.
 
         Parameters
@@ -516,11 +510,12 @@ class SuperEventModel:
                 events_np = np.column_stack([
                     t[mask], x[mask], y[mask], p[mask],
                 ])
-                event_batch = torch.from_numpy(events_np).float().to(self._device)
+                event_batch = torch.from_numpy(
+                    events_np).float().to(self._device)
             else:
                 event_batch = torch.zeros((0, 4), device=self._device)
 
-            result = self.Infer_from_events(event_batch, timestamp=window_end)
+            result = self.infer_from_events(event_batch, timestamp=window_end)
             results.append(result)
 
             window_start = window_end
@@ -531,10 +526,9 @@ class SuperEventModel:
     # Coordinate mapping
     # ------------------------------------------------------------------
 
-    def Map_keypoints_to_sensor_frame(
-        self,
-        keypoints: np.ndarray,
-    ) -> np.ndarray:
+    def map_keypoints_to_sensor_frame(self,
+                                      keypoints: np.ndarray,
+                                      ) -> np.ndarray:
         """Shift keypoints from cropped-model space to full-sensor pixel space.
 
         The model operates on a spatially cropped time-surface. This method
@@ -564,10 +558,9 @@ class SuperEventModel:
         offset = np.array(self._crop_offset, dtype=keypoints.dtype)
         return keypoints + offset
 
-    def Unproject_keypoints(
-        self,
-        keypoints_sensor: np.ndarray,
-    ) -> np.ndarray:
+    def unproject_keypoints(self,
+                            keypoints_sensor: np.ndarray,
+                            ) -> np.ndarray:
         """Convert sensor-frame pixel keypoints to normalized camera coordinates.
 
         Applies the inverse camera projection: ``K^{-1} * [x_px, y_px, 1]^T``.
@@ -616,11 +609,12 @@ class SuperEventModel:
         # Use dist_coeffs only when we have NOT already undistorted the TS.
         dist = None if self._undistort_ts else self._dist_coeffs
 
-        normalized = cv2.undistortPoints(
-            pts_xy,
-            self._camera_matrix.astype(np.float64),
-            dist.astype(np.float64) if dist is not None else None,
-        )
+        normalized = cv2.undistortPoints(pts_xy,
+                                         self._camera_matrix.astype(
+                                             np.float64),
+                                         dist.astype(
+                                             np.float64) if dist is not None else None,
+                                         )
         return normalized.reshape(-1, 2)  # (x_norm, y_norm)
 
     # ------------------------------------------------------------------
@@ -638,4 +632,4 @@ class SuperEventModel:
         >>> model = SuperEventModel()  # doctest: +SKIP
         >>> model.Reset_time_surface()  # doctest: +SKIP
         """
-        self._ts_gen = self._Make_ts_generator()
+        self._ts_gen = self._make_ts_generator()

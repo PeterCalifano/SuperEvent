@@ -94,7 +94,7 @@ class EventInference:
         >>> pipeline = EventInference(EventInferenceSettings())  # doctest: +SKIP
         >>> stream = pipeline.Load_events_from_file("events.aedat4")  # doctest: +SKIP
         """
-        return self._model.Load_events_from_file(path, format=format)
+        return self._model.load_events_from_file(path, format=format)
 
     def Process_single_window(
         self,
@@ -107,7 +107,7 @@ class EventInference:
         -------
         >>> # See tests for runnable examples.
         """
-        return self._model.Infer_from_events(event_batch, timestamp)
+        return self._model.infer_from_events(event_batch, timestamp)
 
     def Process_event_stream(
         self,
@@ -120,4 +120,4 @@ class EventInference:
         -------
         >>> # See tests for runnable examples.
         """
-        return self._model.Infer_from_event_stream(event_stream, time_window_s)
+        return self._model.infer_from_event_stream(event_stream, time_window_s)

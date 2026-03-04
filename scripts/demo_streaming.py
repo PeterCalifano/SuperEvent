@@ -105,7 +105,7 @@ def main() -> None:
         event_batch = torch.from_numpy(events_matrix).float().to(device)
         timestamp = float(stream.t_s[-1]) if len(stream.t_s) > 0 else 0.0
 
-        result = model.Infer_from_events(event_batch, timestamp)
+        result = model.infer_from_events(event_batch, timestamp)
 
         event_frame = Render_events_to_frame(events_matrix, height, width)
         ts_image = Render_time_surface(result.time_surface)

@@ -79,7 +79,7 @@ def test_load_events_from_aedat4(
     synthetic_aedat4_path: Path,
 ) -> None:
     """Loading AEDAT4 returns valid EventStream."""
-    stream = super_event_model.Load_events_from_file(synthetic_aedat4_path)
+    stream = super_event_model.load_events_from_file(synthetic_aedat4_path)
     assert isinstance(stream, EventStream)
     assert len(stream.t_s) > 0
     assert stream.t_s.dtype == np.float64
@@ -90,7 +90,7 @@ def test_load_events_from_h5(
     synthetic_h5_path: Path,
 ) -> None:
     """Loading HDF5 returns valid EventStream."""
-    stream = super_event_model.Load_events_from_file(synthetic_h5_path)
+    stream = super_event_model.load_events_from_file(synthetic_h5_path)
     assert isinstance(stream, EventStream)
     assert len(stream.t_s) > 0
 
@@ -100,7 +100,7 @@ def test_load_events_from_txt(
     synthetic_txt_path: Path,
 ) -> None:
     """Loading TXT returns valid EventStream."""
-    stream = super_event_model.Load_events_from_file(synthetic_txt_path)
+    stream = super_event_model.load_events_from_file(synthetic_txt_path)
     assert isinstance(stream, EventStream)
     assert len(stream.t_s) > 0
 
@@ -110,7 +110,7 @@ def test_load_events_explicit_format(
     synthetic_txt_path: Path,
 ) -> None:
     """Explicit format parameter works."""
-    stream = super_event_model.Load_events_from_file(synthetic_txt_path, format="txt")
+    stream = super_event_model.load_events_from_file(synthetic_txt_path, format="txt")
     assert isinstance(stream, EventStream)
 
 
@@ -125,7 +125,7 @@ def test_infer_from_events_returns_inference_result(
     """Infer_from_events returns a well-formed InferenceResult."""
     mat = synthetic_event_stream.To_matrix_t_x_y_p()
     batch = torch.from_numpy(mat).float()
-    result = super_event_model.Infer_from_events(batch, timestamp=0.05)
+    result = super_event_model.infer_from_events(batch, timestamp=0.05)
 
     assert isinstance(result, InferenceResult)
     assert result.timestamp == 0.05
@@ -140,7 +140,7 @@ def test_infer_from_events_returns_inference_result(
 def test_infer_from_events_empty_batch(super_event_model: SuperEventModel) -> None:
     """Empty event batch still returns a valid InferenceResult."""
     batch = torch.zeros((0, 4))
-    result = super_event_model.Infer_from_events(batch, timestamp=0.0)
+    result = super_event_model.infer_from_events(batch, timestamp=0.0)
     assert isinstance(result, InferenceResult)
     assert result.keypoints.shape[1] == 2
     assert result.time_surface.ndim == 3
@@ -153,7 +153,7 @@ def test_infer_from_events_keypoints_in_bounds(
     """Detected keypoints are within the cropped image bounds."""
     mat = synthetic_event_stream.To_matrix_t_x_y_p()
     batch = torch.from_numpy(mat).float()
-    result = super_event_model.Infer_from_events(batch, timestamp=0.05)
+    result = super_event_model.infer_from_events(batch, timestamp=0.05)
 
     if len(result.keypoints) > 0:
         h, w = super_event_model.cropped_shape
@@ -170,7 +170,7 @@ def test_infer_from_events_top_k_respected(
     """Number of keypoints does not exceed top_k."""
     mat = synthetic_event_stream.To_matrix_t_x_y_p()
     batch = torch.from_numpy(mat).float()
-    result = super_event_model.Infer_from_events(batch, timestamp=0.05)
+    result = super_event_model.infer_from_events(batch, timestamp=0.05)
     # super_event_model fixture sets top_k=50
     assert len(result.keypoints) <= 50
 
@@ -182,7 +182,7 @@ def test_infer_from_events_descriptors_l2_normalized(
     """Descriptors have approximately unit L2 norm."""
     mat = synthetic_event_stream.To_matrix_t_x_y_p()
     batch = torch.from_numpy(mat).float()
-    result = super_event_model.Infer_from_events(batch, timestamp=0.05)
+    result = super_event_model.infer_from_events(batch, timestamp=0.05)
 
     if len(result.descriptors) > 0:
         norms = np.linalg.norm(result.descriptors, axis=1)
@@ -196,7 +196,7 @@ def test_infer_from_events_descriptors_l2_normalized(
 def test_infer_from_time_surface_numpy(super_event_model: SuperEventModel) -> None:
     """Infer_from_time_surface works with numpy array input."""
     ts = np.random.rand(180, 240, 10).astype(np.float32)
-    result = super_event_model.Infer_from_time_surface(ts, timestamp=1.0)
+    result = super_event_model.infer_from_time_surface(ts, timestamp=1.0)
 
     assert isinstance(result, InferenceResult)
     assert result.timestamp == 1.0
@@ -207,7 +207,7 @@ def test_infer_from_time_surface_numpy(super_event_model: SuperEventModel) -> No
 def test_infer_from_time_surface_torch(super_event_model: SuperEventModel) -> None:
     """Infer_from_time_surface works with torch tensor input."""
     ts = torch.rand(180, 240, 10)
-    result = super_event_model.Infer_from_time_surface(ts, timestamp=2.0)
+    result = super_event_model.infer_from_time_surface(ts, timestamp=2.0)
 
     assert isinstance(result, InferenceResult)
     assert result.timestamp == 2.0
@@ -216,7 +216,7 @@ def test_infer_from_time_surface_torch(super_event_model: SuperEventModel) -> No
 def test_infer_from_time_surface_descriptors_shape(super_event_model: SuperEventModel) -> None:
     """Descriptors from TS inference have correct second dimension."""
     ts = np.random.rand(180, 240, 10).astype(np.float32) * 0.5
-    result = super_event_model.Infer_from_time_surface(ts)
+    result = super_event_model.infer_from_time_surface(ts)
 
     if len(result.descriptors) > 0:
         assert result.descriptors.shape[1] == super_event_model.config["descriptor_size"]
@@ -232,7 +232,7 @@ def test_infer_from_event_stream_window_count(
 ) -> None:
     """Infer_from_event_stream returns one result per time window."""
     time_window = 0.025
-    results = super_event_model.Infer_from_event_stream(
+    results = super_event_model.infer_from_event_stream(
         synthetic_event_stream, time_window_s=time_window,
     )
     duration = synthetic_event_stream.t_s[-1] - synthetic_event_stream.t_s[0]
@@ -246,7 +246,7 @@ def test_infer_from_event_stream_timestamps_increasing(
     synthetic_event_stream: EventStream,
 ) -> None:
     """Result timestamps are strictly increasing."""
-    results = super_event_model.Infer_from_event_stream(
+    results = super_event_model.infer_from_event_stream(
         synthetic_event_stream, time_window_s=0.025,
     )
     timestamps = [r.timestamp for r in results]
@@ -270,7 +270,7 @@ def test_reset_time_surface() -> None:
         [0.0, 100.0, 90.0, 1.0],
         [0.001, 120.0, 80.0, 0.0],
     ])
-    model.Infer_from_events(events, timestamp=0.001)
+    model.infer_from_events(events, timestamp=0.001)
 
     ts_stamps_before = model._ts_gen.time_stamps.clone()
     assert torch.any(ts_stamps_before != 0), "Timestamps should be non-zero after events"
@@ -328,7 +328,7 @@ def test_map_keypoints_to_sensor_frame_applies_offset(
 ) -> None:
     """Mapped keypoints are shifted by exactly the crop offset."""
     kp = np.array([[10., 15.], [20., 30.]], dtype=np.float32)
-    mapped = super_event_model.Map_keypoints_to_sensor_frame(kp)
+    mapped = super_event_model.map_keypoints_to_sensor_frame(kp)
     expected = kp + np.array(super_event_model.crop_offset, dtype=np.float32)
     np.testing.assert_array_equal(mapped, expected)
 
@@ -337,7 +337,7 @@ def test_map_keypoints_to_sensor_frame_empty() -> None:
     """Empty keypoint array is returned unchanged (zero rows)."""
     model = super_event_model_factory()
     kp = np.zeros((0, 2), dtype=np.float32)
-    mapped = model.Map_keypoints_to_sensor_frame(kp)
+    mapped = model.map_keypoints_to_sensor_frame(kp)
     assert mapped.shape == (0, 2)
 
 
@@ -348,8 +348,8 @@ def test_map_keypoints_to_sensor_frame_within_sensor_bounds(
     """All sensor-frame keypoints are within sensor resolution."""
     mat = synthetic_event_stream.To_matrix_t_x_y_p()
     batch = torch.from_numpy(mat).float()
-    result = super_event_model.Infer_from_events(batch, timestamp=0.05)
-    kp_sensor = super_event_model.Map_keypoints_to_sensor_frame(result.keypoints)
+    result = super_event_model.infer_from_events(batch, timestamp=0.05)
+    kp_sensor = super_event_model.map_keypoints_to_sensor_frame(result.keypoints)
 
     if len(kp_sensor) > 0:
         h, w = super_event_model.resolution
@@ -379,14 +379,14 @@ def test_unproject_keypoints_raises_without_camera_matrix(
     """Unproject_keypoints raises ValueError when no camera_matrix was given."""
     kp = np.array([[10., 20.]], dtype=np.float32)
     with pytest.raises(ValueError, match="camera_matrix"):
-        super_event_model.Unproject_keypoints(kp)
+        super_event_model.unproject_keypoints(kp)
 
 
 def test_unproject_keypoints_empty_returns_empty() -> None:
     """Empty keypoint array returns zero-row (N, 2) array."""
     K = np.array([[200., 0., 120.], [0., 200., 90.], [0., 0., 1.]], dtype=np.float64)
     model = super_event_model_factory(camera_matrix=K, dist_coeffs=np.zeros(5))
-    result = model.Unproject_keypoints(np.zeros((0, 2), dtype=np.float32))
+    result = model.unproject_keypoints(np.zeros((0, 2), dtype=np.float32))
     assert result.shape == (0, 2)
 
 
@@ -395,7 +395,7 @@ def test_unproject_keypoints_shape() -> None:
     K = np.array([[200., 0., 120.], [0., 200., 90.], [0., 0., 1.]], dtype=np.float64)
     model = super_event_model_factory(camera_matrix=K, dist_coeffs=np.zeros(5))
     kp = np.array([[90., 120.], [45., 60.], [10., 30.]], dtype=np.float32)
-    out = model.Unproject_keypoints(kp)
+    out = model.unproject_keypoints(kp)
     assert out.shape == (3, 2)
 
 
@@ -406,7 +406,7 @@ def test_unproject_keypoints_principal_point_maps_to_origin() -> None:
     model = super_event_model_factory(camera_matrix=K, dist_coeffs=np.zeros(5))
     # A keypoint at [row=cy, col=cx] → (x=cx, y=cy) in pixel space
     kp = np.array([[cy, cx]], dtype=np.float32)
-    out = model.Unproject_keypoints(kp)
+    out = model.unproject_keypoints(kp)
     np.testing.assert_allclose(out[0], [0., 0.], atol=1e-5)
 
 
@@ -418,7 +418,7 @@ def test_unproject_keypoints_focal_length_scaling() -> None:
     model = super_event_model_factory(camera_matrix=K, dist_coeffs=np.zeros(5))
     # col = cx + fx → x_norm = 1.0; row = cy
     kp = np.array([[cy, cx + fx]], dtype=np.float32)
-    out = model.Unproject_keypoints(kp)
+    out = model.unproject_keypoints(kp)
     np.testing.assert_allclose(out[0, 0], 1.0, atol=1e-5)
     np.testing.assert_allclose(out[0, 1], 0.0, atol=1e-5)
 
@@ -431,5 +431,5 @@ def test_model_accepts_camera_matrix_without_dist_coeffs() -> None:
     assert not model._undistort_ts  # no dist_coeffs → no TS undistortion
     # Unprojection still works (treats pixels as already undistorted)
     kp = np.array([[90., 120.]], dtype=np.float32)
-    out = model.Unproject_keypoints(kp)
+    out = model.unproject_keypoints(kp)
     assert out.shape == (1, 2)
