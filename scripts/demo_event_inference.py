@@ -175,13 +175,18 @@ def main() -> None:
 if __name__ == "__main__":
 
     # Setup options for manual run
+    event_filepath = "path_to_your_event_file.aedat4"  # Set event file path here
+    config_filepath = "config/super_event.yaml" # Set config file path here
+    model_checkpoint_filepath = "saved_models/super_event_weights.pth" # Set model checkpoint path here
+    resolution = (180, 240)
+
     python_inputs = {
-        "event_file": "path/to/your/events.aedat4",  # placeholder
+        "event_file": event_filepath,  # placeholder
         "format": None,  # e.g. "aedat4", "aedat2", "h5", "txt"
-        "model": "saved_models/super_event_weights.pth",
-        "config": "config/super_event.yaml",
+        "model": model_checkpoint_filepath,
+        "config": config_filepath,
         "time_window": 0.033,
-        "resolution": (180, 240),
+        "resolution": resolution,
         "save_dir": "",
         "top_k": None,
     }
@@ -204,7 +209,7 @@ if __name__ == "__main__":
             str(python_inputs["resolution"][1]),
         ],
     )
-    
+
     if python_inputs["save_dir"]:
         cli_args.extend(["--save_dir", str(python_inputs["save_dir"])])
     if python_inputs["top_k"] is not None:
