@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-"""Shared pytest fixtures for synthetic, interface-focused dataset tests.
+"""Shared pytest fixtures for all SuperEvent tests.
+
+Includes:
+- Dataset fixtures for TsDataset interface tests
+- Inference fixtures (EventStream, file paths, pretrained model) shared across
+  test_super_event_model, test_inference_aedat4, and test_event_sources
 
 The fixtures in this module build a tiny on-disk sequence that mirrors the
 folder structure expected by `data.dataset.TsDataset`:
@@ -20,6 +25,8 @@ import numpy as np
 import pytest
 
 from data_preparation.util.data_io import save_ts_sparse
+from eventDataGenLibPy import EventStream, Save_events
+from inference.super_event_model import SuperEventModel
 
 
 def _Build_time_surface(image_index: int, shape: tuple[int, int, int]) -> np.ndarray:
@@ -110,3 +117,68 @@ def dataset_config_factory(minimal_data_root: Path) -> Callable[[str], dict[str,
         }
 
     return _Create_config
+
+
+# ---------------------------------------------------------------------------
+# Shared inference fixtures
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="session")
+def synthetic_event_stream() -> EventStream:
+    """Deterministic synthetic EventStream used across inference tests."""
+    n_events = 5000
+    rng = np.random.default_rng(42)
+    return EventStream(
+        t_s=np.sort(rng.uniform(0.0, 0.1, n_events)).astype(np.float64),
+        x=rng.integers(0, 240, n_events).astype(np.int32),
+        y=rng.integers(0, 180, n_events).astype(np.int32),
+        p01=rng.integers(0, 2, n_events).astype(np.uint8),
+        width=240,
+        height=180,
+    )
+
+
+@pytest.fixture
+def synthetic_aedat4_path(
+    tmp_path: Path,
+    synthetic_event_stream: EventStream,
+) -> Path:
+    """Write synthetic events to a temporary AEDAT4 file."""
+    path = tmp_path / "synthetic.aedat4"
+    Save_events(synthetic_event_stream, path, Format="aedat4", Width=240, Height=180)
+    return path
+
+
+@pytest.fixture
+def synthetic_h5_path(
+    tmp_path: Path,
+    synthetic_event_stream: EventStream,
+) -> Path:
+    """Write synthetic events to a temporary HDF5 file."""
+    path = tmp_path / "synthetic.h5"
+    Save_events(synthetic_event_stream, path, Format="h5")
+    return path
+
+
+@pytest.fixture
+def synthetic_txt_path(
+    tmp_path: Path,
+    synthetic_event_stream: EventStream,
+) -> Path:
+    """Write synthetic events to a temporary TXT file."""
+    path = tmp_path / "synthetic.txt"
+    Save_events(synthetic_event_stream, path, Format="txt")
+    return path
+
+
+@pytest.fixture(scope="session")
+def super_event_model() -> SuperEventModel:
+    """Pretrained SuperEventModel (loaded once per test session)."""
+    return SuperEventModel(
+        config_path="config/super_event.yaml",
+        model_path="saved_models/super_event_weights.pth",
+        device="cpu",
+        resolution=[180, 240],
+        detection_threshold=0.001,
+        top_k=50,
+    )

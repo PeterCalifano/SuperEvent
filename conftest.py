@@ -7,4 +7,8 @@ tests. Keep them excluded from automatic pytest discovery.
 collect_ignore = [
     "ts_generation/test_ts.py",
     "models/backbones/maxvit_backbone/layers/maxvit/layers/test_time_pool.py",
+    "inference/demo_aedat4_inference.py",
+    "inference/demo_event_inference.py",
+    "inference/demo_streaming.py",
+    "inference/export_onnx.py",
 ]

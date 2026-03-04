@@ -33,6 +33,14 @@ train = [
 ros = [
   "cv-bridge>=1.13.0.post0",
 ]
+onnx = [
+  "onnx>=1.14",
+  "onnxruntime>=1.16",
+  "pyTorchAutoForge",
+]
+streaming = [
+  "dv-processing",
+]
 dev = [
   "build>=1.2",
   "pytest>=8.0",
@@ -43,7 +51,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["data*", "data_preparation*", "models*", "ts_generation*", "util*"]
+include = ["data*", "data_preparation*", "inference*", "models*", "ts_generation*", "util*"]
 exclude = ["docs*", "example_data*", "saved_models*"]
 namespaces = true
 
@@ -55,3 +63,6 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-ra --ignore=ts_generation/test_ts.py --ignore=models/backbones/maxvit_backbone/layers/maxvit/layers/test_time_pool.py"
 pythonpath = ["."]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
