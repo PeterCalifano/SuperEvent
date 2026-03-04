@@ -1,9 +1,8 @@
-"""Backward-compatibility tests for inference.event_inference pipeline.
+"""Tests for inference.event_inference pipeline.
 
-Verifies that the ``EventInference`` / ``Aedat4Inference`` API still works
-after refactoring to delegate to ``SuperEventModel``. Inference correctness
-(keypoint bounds, L2 norm, window counts) is covered by test_super_event_model.py;
-this file focuses on the wrapper surface and deprecated aliases.
+Verifies the ``EventInference`` wrapper surface that delegates to
+``SuperEventModel``. Inference correctness (keypoint bounds, L2 norm, window
+counts) is covered by test_super_event_model.py.
 """
 
 from __future__ import annotations
@@ -19,10 +18,8 @@ from inference.event_inference import (
     EventInference,
     EventInferenceSettings,
     InferenceResult,
-    _Compute_crop_mask,
-    _Load_config,
 )
-from inference.super_event_model import SuperEventModel
+from inference.super_event_model import Compute_crop_mask, Load_config, SuperEventModel
 
 
 # ---------------------------------------------------------------------------
@@ -44,7 +41,7 @@ def inference_pipeline() -> EventInference:
 
 
 # ---------------------------------------------------------------------------
-# Settings and aliases
+# Settings
 # ---------------------------------------------------------------------------
 
 def test_event_inference_settings_defaults() -> None:
@@ -55,14 +52,6 @@ def test_event_inference_settings_defaults() -> None:
     assert s.nms_box_size == 5
     assert s.device == "cpu"
     assert s.top_k is None
-
-
-def test_backward_compat_aliases_exist() -> None:
-    """Aedat4Inference and Aedat4InferenceSettings importable from old path."""
-    from inference.aedat4_inference import Aedat4Inference, Aedat4InferenceSettings
-
-    assert Aedat4Inference is EventInference
-    assert Aedat4InferenceSettings is EventInferenceSettings
 
 
 def test_event_inference_delegates_to_super_event_model(
@@ -83,18 +72,18 @@ def test_event_inference_exposes_cropped_shape(
 
 
 # ---------------------------------------------------------------------------
-# Config / crop mask re-exports
+# Config / crop mask
 # ---------------------------------------------------------------------------
 
 def test_load_config_loads_backbone() -> None:
-    """_Load_config (re-exported from super_event_model) merges backbone YAML."""
-    config = _Load_config("config/super_event.yaml")
+    """Load_config merges backbone YAML."""
+    config = Load_config("config/super_event.yaml")
     assert "backbone_config" in config
 
 
 def test_compute_crop_mask_grid_only() -> None:
-    """_Compute_crop_mask with grid_size=8 on [180, 240] yields [176, 240]."""
-    mask, shape = _Compute_crop_mask([180, 240], {"grid_size": 8})
+    """Compute_crop_mask with grid_size=8 on [180, 240] yields [176, 240]."""
+    mask, shape = Compute_crop_mask([180, 240], {"grid_size": 8})
     assert shape == [176, 240]
 
 
@@ -112,17 +101,8 @@ def test_load_events_from_aedat4(
     assert len(stream.t_s) > 0
 
 
-def test_backward_compat_load_events_from_aedat4(
-    synthetic_aedat4_path: Path,
-    inference_pipeline: EventInference,
-) -> None:
-    """Deprecated Load_events_from_aedat4 method still works."""
-    stream = inference_pipeline.Load_events_from_aedat4(synthetic_aedat4_path)
-    assert isinstance(stream, EventStream)
-
-
 # ---------------------------------------------------------------------------
-# Wrapper-specific methods
+# Wrapper methods
 # ---------------------------------------------------------------------------
 
 def test_process_single_window_returns_inference_result(
