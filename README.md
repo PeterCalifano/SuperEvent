@@ -26,6 +26,7 @@ This is the official repository of [**SuperEvent: Cross-Modal Learning of Event-
 For more details, please check our [**project page**](https://ethz-mrl.github.io/SuperEvent/).
 
 Technical repository guide: `docs/REPOSITORY_OVERVIEW.md`.
+ONNX deployment guide (C++ / ONNX Runtime): `docs/ONNX_CPP_INTEGRATION.md`.
 
 ## Installation
 
