@@ -4,6 +4,7 @@
 build/
 dist/
 
+**/*.onnx
 logs/*
 results/*
 runs/*
