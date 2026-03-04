@@ -4,12 +4,12 @@ Usage
 -----
 TCP (DV SDK)::
 
-    python -m inference.demo_streaming --source tcp --address 127.0.0.1 --port 4040 \\
+    python -m examples.demo_streaming --source tcp --address 127.0.0.1 --port 4040 \\
         [--model ...] [--config ...] [--time_window 0.033] [--resolution 180 240]
 
 ROS2 (dvs_msgs/EventArray)::
 
-    python -m inference.demo_streaming --source ros2 --topic /dvs/events \\
+    python -m examples.demo_streaming --source ros2 --topic /dvs/events \\
         [--model ...] [--config ...] [--time_window 0.033] [--resolution 180 240]
 
 Press 'q' to quit.

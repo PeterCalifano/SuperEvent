@@ -4,7 +4,7 @@ Supports AEDAT4, AEDAT2, HDF5, and TXT event file formats.
 
 Usage
 -----
-    python -m inference.demo_event_inference <path_to_event_file> \\
+    python -m examples.demo_event_inference <path_to_event_file> \\
         [--format aedat4|aedat2|h5|txt] \\
         [--model saved_models/super_event_weights.pth] \\
         [--config config/super_event.yaml] \\
