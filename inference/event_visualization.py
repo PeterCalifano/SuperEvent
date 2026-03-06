@@ -19,11 +19,10 @@ import cv2
 import numpy as np
 
 
-def Render_events_to_frame(
-    events_t_x_y_p: np.ndarray,
-    height: int,
-    width: int,
-) -> np.ndarray:
+def Render_events_to_frame(events_t_x_y_p: np.ndarray,
+                           height: int,
+                           width: int,
+                           ) -> np.ndarray:
     """Accumulate events into a BGR image: ON=red, OFF=blue, background=white.
 
     Parameters
@@ -269,8 +268,10 @@ def Create_inference_summary(
     >>> print(mosaic.shape)
     (200, 240, 3)
     """
-    target_h = max(img.shape[0] for img in [event_frame, ts_image, detection_image, descriptor_image])
-    target_w = max(img.shape[1] for img in [event_frame, ts_image, detection_image, descriptor_image])
+    target_h = max(img.shape[0] for img in [
+                   event_frame, ts_image, detection_image, descriptor_image])
+    target_w = max(img.shape[1] for img in [
+                   event_frame, ts_image, detection_image, descriptor_image])
 
     def _Resize(img: np.ndarray) -> np.ndarray:
         if img.shape[0] != target_h or img.shape[1] != target_w:

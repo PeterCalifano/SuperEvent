@@ -195,7 +195,7 @@ if __name__ == "__main__":
     # Set model checkpoint path here
     model_checkpoint_filepath = os.path.join(this_repo_folder, "saved_models/super_event_weights.pth")
     
-    resolution = (640, 480)  # Set sensor resolution here (height, width)
+    resolution = (480, 640)  # Set sensor resolution here (height, width)
 
     python_inputs = {
         "event_file": os.path.join(data_folder, event_filepath),  # placeholder
@@ -209,6 +209,7 @@ if __name__ == "__main__":
     }
 
     cli_args = ["demo_event_inference.py", python_inputs["event_file"]]
+    # TODO understand window size requirement and display options. Replace implementation of viz functions with functions from EventDatasetGen library
 
     if python_inputs["format"] is not None:
         cli_args.extend(["--format", str(python_inputs["format"])])
