@@ -25,6 +25,7 @@ import cv2
 import numpy as np
 import torch
 
+import data
 from inference.event_inference import EventInference, EventInferenceSettings
 from inference.event_visualization import (
     Create_inference_summary,
@@ -33,6 +34,7 @@ from inference.event_visualization import (
     Render_keypoints_on_image,
     Render_time_surface,
 )
+
 
 def main() -> None:
     """Run the event-file inference demo."""
@@ -98,32 +100,37 @@ def main() -> None:
 
     # Setup inference session
     settings = EventInferenceSettings(resolution=args.resolution,
-        config_path=args.config,
-        model_path=args.model,
-        device=device,
-        top_k=args.top_k,
-    )
+                                      config_path=args.config,
+                                      model_path=args.model,
+                                      device=device,
+                                      top_k=args.top_k,
+                                      )
 
     print("Loading pipeline...")
     pipeline = EventInference(settings)
 
     # Load events from file using EventDataGenerationLib loader
     print(f"Loading events from {args.event_file}...")
-    event_stream = pipeline.Load_events_from_file(args.event_file, format=args.format)
+    
+    event_stream = pipeline.Load_events_from_file(args.event_file, 
+                                                  format=args.format)
+    
     num_events = len(event_stream.t_s)
     duration = event_stream.t_s[-1] - event_stream.t_s[0]
     fmt = event_stream.source_format or "auto-detected"
-    print(f"Loaded {num_events} events spanning {duration:.3f} s (format: {fmt})")
+    print(
+        f"Loaded {num_events} events spanning {duration:.3f} s (format: {fmt})")
 
     if args.save_dir:
         os.makedirs(args.save_dir, exist_ok=True)
 
     # Run inference in time windows and visualize
     print(f"Running inference with {args.time_window:.3f} s windows...")
-    results = pipeline.Process_event_stream(event_stream, time_window_s=args.time_window)
+    results = pipeline.Process_event_stream(
+        event_stream, time_window_s=args.time_window)
 
     # Build events matrix for visualization windowing
-    events_matrix = event_stream.To_matrix_t_x_y_p()
+    events_matrix = event_stream.to_matrix_t_x_y_p()
 
     print(f"Visualizing {len(results)} windows...")
     t_start = event_stream.t_s[0]
@@ -132,7 +139,8 @@ def main() -> None:
     for i, result in enumerate(results):
         window_start = t_start + i * args.time_window
         window_end = window_start + args.time_window
-        mask = (events_matrix[:, 0] >= window_start) & (events_matrix[:, 0] < window_end)
+        mask = (events_matrix[:, 0] >= window_start) & (
+            events_matrix[:, 0] < window_end)
         window_events = events_matrix[mask]
 
         # Render panels for visualization
@@ -160,7 +168,8 @@ def main() -> None:
         )
 
         if args.save_dir:
-            cv2.imwrite(os.path.join(args.save_dir, f"window_{i:04d}.png"), mosaic)
+            cv2.imwrite(os.path.join(args.save_dir,
+                        f"window_{i:04d}.png"), mosaic)
         else:
             cv2.imshow("SuperEvent Inference", mosaic)
             key = cv2.waitKey(0) & 0xFF
@@ -175,13 +184,21 @@ def main() -> None:
 if __name__ == "__main__":
 
     # Setup options for manual run
-    event_filepath = "path_to_your_event_file.aedat4"  # Set event file path here
-    config_filepath = "config/super_event.yaml" # Set config file path here
-    model_checkpoint_filepath = "saved_models/super_event_weights.pth" # Set model checkpoint path here
-    resolution = (180, 240)
+    this_repo_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+
+    data_folder = os.getenv("SCRATCH_PRO")
+    assert data_folder is not None, "Please set SCRATCH_PRO environment variable to run the demo."
+    data_folder = os.path.join(data_folder, "event_test_files")
+
+    event_filepath = "dvSave-2026_01_14_17_55_45.aedat4"  # Set event file path here
+    config_filepath = os.path.join(this_repo_folder, "config/super_event.yaml")  # Set config file path here
+    # Set model checkpoint path here
+    model_checkpoint_filepath = os.path.join(this_repo_folder, "saved_models/super_event_weights.pth")
+    
+    resolution = (640, 480)  # Set sensor resolution here (height, width)
 
     python_inputs = {
-        "event_file": event_filepath,  # placeholder
+        "event_file": os.path.join(data_folder, event_filepath),  # placeholder
         "format": None,  # e.g. "aedat4", "aedat2", "h5", "txt"
         "model": model_checkpoint_filepath,
         "config": config_filepath,
@@ -195,7 +212,7 @@ if __name__ == "__main__":
 
     if python_inputs["format"] is not None:
         cli_args.extend(["--format", str(python_inputs["format"])])
-    
+
     cli_args.extend(
         [
             "--model",

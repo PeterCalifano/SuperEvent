@@ -356,7 +356,8 @@ class SuperEventModel:
         >>> model = SuperEventModel()  # doctest: +SKIP
         >>> stream = model.Load_events_from_file("events.aedat4")  # doctest: +SKIP
         """
-        return Load_events(path, Format=format)
+    
+        return Load_events(path, format=format)
 
     # ------------------------------------------------------------------
     # Inference
